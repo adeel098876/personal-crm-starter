@@ -14,7 +14,354 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      health_snapshots: {
+        Row: {
+          computed_at: string
+          id: string
+          person_id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          computed_at?: string
+          id?: string
+          person_id: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          computed_at?: string
+          id?: string
+          person_id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_snapshots_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interactions: {
+        Row: {
+          channel: string | null
+          created_at: string
+          id: string
+          location: string | null
+          metadata: Json
+          mood: string | null
+          occurred_at: string
+          person_id: string
+          summary: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          metadata?: Json
+          mood?: string | null
+          occurred_at?: string
+          person_id: string
+          summary?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          metadata?: Json
+          mood?: string | null
+          occurred_at?: string
+          person_id?: string
+          summary?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          person_id: string
+          pinned: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          person_id: string
+          pinned?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          person_id?: string
+          pinned?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people: {
+        Row: {
+          anniversary: string | null
+          archived: boolean
+          bio: string | null
+          birthday: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          how_we_met: string | null
+          id: string
+          location: string | null
+          name: string
+          nicknames: string[]
+          phone: string | null
+          photo_url: string | null
+          relationship_type: string
+          role: string | null
+          tags: string[]
+          target_cadence_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anniversary?: string | null
+          archived?: boolean
+          bio?: string | null
+          birthday?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          how_we_met?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          nicknames?: string[]
+          phone?: string | null
+          photo_url?: string | null
+          relationship_type?: string
+          role?: string | null
+          tags?: string[]
+          target_cadence_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anniversary?: string | null
+          archived?: boolean
+          bio?: string | null
+          birthday?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          how_we_met?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          nicknames?: string[]
+          phone?: string | null
+          photo_url?: string | null
+          relationship_type?: string
+          role?: string | null
+          tags?: string[]
+          target_cadence_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      person_fields: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          key: string
+          person_id: string
+          user_id: string
+          value: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          key: string
+          person_id: string
+          user_id: string
+          value?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          key?: string
+          person_id?: string
+          user_id?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_fields_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promises: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string
+          due_at: string | null
+          id: string
+          person_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description: string
+          due_at?: string | null
+          id?: string
+          person_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          due_at?: string | null
+          id?: string
+          person_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promises_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminders: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          due_at: string
+          id: string
+          kind: string
+          notes: string | null
+          person_id: string | null
+          recurrence: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          due_at: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          person_id?: string | null
+          recurrence?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          person_id?: string | null
+          recurrence?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
