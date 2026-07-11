@@ -46,6 +46,48 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          created_at: string
+          id: string
+          source: string
+          stats: Json
+          status: string
+          total_imported: number
+          total_parsed: number
+          total_review: number
+          total_skipped: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source: string
+          stats?: Json
+          status?: string
+          total_imported?: number
+          total_parsed?: number
+          total_review?: number
+          total_skipped?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source?: string
+          stats?: Json
+          status?: string
+          total_imported?: number
+          total_parsed?: number
+          total_review?: number
+          total_skipped?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           channel: string | null
@@ -143,8 +185,10 @@ export type Database = {
           company: string | null
           created_at: string
           email: string | null
+          external_id: string | null
           how_we_met: string | null
           id: string
+          import_source: string | null
           location: string | null
           name: string
           nicknames: string[]
@@ -165,8 +209,10 @@ export type Database = {
           company?: string | null
           created_at?: string
           email?: string | null
+          external_id?: string | null
           how_we_met?: string | null
           id?: string
+          import_source?: string | null
           location?: string | null
           name: string
           nicknames?: string[]
@@ -187,8 +233,10 @@ export type Database = {
           company?: string | null
           created_at?: string
           email?: string | null
+          external_id?: string | null
           how_we_met?: string | null
           id?: string
+          import_source?: string | null
           location?: string | null
           name?: string
           nicknames?: string[]
@@ -247,6 +295,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          push_enabled: boolean
+          push_quiet_hours: Json
           updated_at: string
         }
         Insert: {
@@ -254,6 +304,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          push_enabled?: boolean
+          push_quiet_hours?: Json
           updated_at?: string
         }
         Update: {
@@ -261,6 +313,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          push_enabled?: boolean
+          push_quiet_hours?: Json
           updated_at?: string
         }
         Relationships: []
@@ -308,6 +362,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          active: boolean
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       reminders: {
         Row: {
@@ -361,6 +454,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vapid_keys: {
+        Row: {
+          created_at: string
+          id: number
+          private_key: string
+          public_key: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          private_key: string
+          public_key: string
+          subject?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          private_key?: string
+          public_key?: string
+          subject?: string
+        }
+        Relationships: []
       }
     }
     Views: {
