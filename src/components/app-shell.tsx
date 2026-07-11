@@ -8,6 +8,7 @@ const NAV = [
   { to: "/people", label: "People", key: "2" },
   { to: "/reminders", label: "Reminders", key: "3" },
   { to: "/analytics", label: "Analytics", key: "4" },
+  { to: "/import", label: "Import", key: "5" },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
