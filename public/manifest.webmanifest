@@ -1,0 +1,14 @@
+{
+  "name": "Kinetic — Relationship OS",
+  "short_name": "Kinetic",
+  "description": "Your private relationship operating system.",
+  "start_url": "/today",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "64x64", "type": "image/x-icon" }
+  ]
+}
