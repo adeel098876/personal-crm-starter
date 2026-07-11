@@ -215,7 +215,6 @@ export const previewAndImport = createServerFn({ method: "POST" })
     const predictions = await predictBatch(fresh);
     const byIndex = new Map(predictions.map((p) => [p.index, p]));
 
-    type PersonInsert = Parameters<typeof supabase.from<"people">>[0] extends never ? never : any;
     const autoRows: any[] = [];
     const review: ContactPrediction[] = [];
 
