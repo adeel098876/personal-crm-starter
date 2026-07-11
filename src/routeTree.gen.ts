@@ -16,7 +16,9 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRemindersRouteImport } from './routes/_authenticated/reminders'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
+import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as ApiPublicDispatchRemindersRouteImport } from './routes/api/public/dispatch-reminders'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -53,11 +55,22 @@ const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
   path: '/people',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicDispatchRemindersRoute =
+  ApiPublicDispatchRemindersRouteImport.update({
+    id: '/api/public/dispatch-reminders',
+    path: '/api/public/dispatch-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -68,21 +81,25 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/import': typeof AuthenticatedImportRoute
   '/people': typeof AuthenticatedPeopleRouteWithChildren
   '/reminders': typeof AuthenticatedRemindersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/today': typeof AuthenticatedTodayRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/api/public/dispatch-reminders': typeof ApiPublicDispatchRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/import': typeof AuthenticatedImportRoute
   '/people': typeof AuthenticatedPeopleRouteWithChildren
   '/reminders': typeof AuthenticatedRemindersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/today': typeof AuthenticatedTodayRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/api/public/dispatch-reminders': typeof ApiPublicDispatchRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -90,11 +107,13 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRouteWithChildren
   '/_authenticated/reminders': typeof AuthenticatedRemindersRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/api/public/dispatch-reminders': typeof ApiPublicDispatchRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -102,38 +121,45 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/analytics'
+    | '/import'
     | '/people'
     | '/reminders'
     | '/settings'
     | '/today'
     | '/people/$id'
+    | '/api/public/dispatch-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/analytics'
+    | '/import'
     | '/people'
     | '/reminders'
     | '/settings'
     | '/today'
     | '/people/$id'
+    | '/api/public/dispatch-reminders'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/analytics'
+    | '/_authenticated/import'
     | '/_authenticated/people'
     | '/_authenticated/reminders'
     | '/_authenticated/settings'
     | '/_authenticated/today'
     | '/_authenticated/people/$id'
+    | '/api/public/dispatch-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicDispatchRemindersRoute: typeof ApiPublicDispatchRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -187,12 +213,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPeopleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/import': {
+      id: '/_authenticated/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthenticatedImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/analytics': {
       id: '/_authenticated/analytics'
       path: '/analytics'
       fullPath: '/analytics'
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/dispatch-reminders': {
+      id: '/api/public/dispatch-reminders'
+      path: '/api/public/dispatch-reminders'
+      fullPath: '/api/public/dispatch-reminders'
+      preLoaderRoute: typeof ApiPublicDispatchRemindersRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/people/$id': {
       id: '/_authenticated/people/$id'
@@ -217,6 +257,7 @@ const AuthenticatedPeopleRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRouteWithChildren
   AuthenticatedRemindersRoute: typeof AuthenticatedRemindersRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -225,6 +266,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRouteWithChildren,
   AuthenticatedRemindersRoute: AuthenticatedRemindersRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -238,17 +280,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicDispatchRemindersRoute: ApiPublicDispatchRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
