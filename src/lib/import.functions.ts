@@ -321,7 +321,9 @@ export const commitReview = createServerFn({ method: "POST" })
 
     let imported = 0;
     if (rows.length > 0) {
-      const { error, count } = await supabase.from("people").insert(rows, { count: "exact" });
+      const { error, count } = await supabase
+        .from("people")
+        .insert(rows as any, { count: "exact" });
       if (error) throw new Error(error.message);
       imported = count ?? rows.length;
     }
