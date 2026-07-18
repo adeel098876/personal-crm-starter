@@ -61,10 +61,10 @@ function TodayPage() {
     <div className="grid grid-cols-12 gap-8">
       <div className="col-span-12 lg:col-span-8 space-y-10">
         <header>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             {format(new Date(), "EEEE · MMM d, yyyy")}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight mt-1">Today</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-white to-[#AEAEB2]">Today</h1>
         </header>
 
         {empty && <EmptyState />}
@@ -73,29 +73,31 @@ function TodayPage() {
           title="Priority actions"
           badge={
             d?.birthdays.length || d?.reachOut.length
-              ? `${(d?.birthdays.length ?? 0) + (d?.reachOut.length ?? 0)} CRITICAL`
+              ? `${(d?.birthdays.length ?? 0) + (d?.reachOut.length ?? 0)} Actionable`
               : undefined
           }
         >
           {(d?.birthdays.length ?? 0) + (d?.reachOut.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing critical today. Nice work.</p>
+            <div className="glass-panel p-6 rounded-3xl text-center">
+              <p className="text-sm text-muted-foreground">Nothing critical today. Nice work.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {d?.birthdays.map((b) => (
                 <Link
                   key={b.person.id + b.kind}
                   to="/people/$id"
                   params={{ id: b.person.id }}
-                  className="bg-surface border border-border p-4 rounded-lg hover:border-accent/40 transition-colors block"
+                  className="glass-panel p-5 rounded-3xl hover:bg-white/[0.06] hover:border-white/15 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.99] block group"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <Initials name={b.person.name} />
-                    <span className="text-[10px] font-mono text-accent">
-                      {b.kind.toUpperCase()}
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                      {b.kind}
                     </span>
                   </div>
-                  <h3 className="font-medium">{b.person.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h3 className="font-semibold text-white group-hover:text-primary transition-colors text-base">{b.person.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
                     {format(new Date(b.when), "MMM d")} — {b.kind}
                   </p>
                 </Link>
@@ -105,17 +107,17 @@ function TodayPage() {
                   key={r.person.id}
                   to="/people/$id"
                   params={{ id: r.person.id }}
-                  className="bg-surface border border-border p-4 rounded-lg hover:border-accent/40 transition-colors block"
+                  className="glass-panel p-5 rounded-3xl hover:bg-white/[0.06] hover:border-white/15 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.99] block group"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <Initials name={r.person.name} />
-                    <span className="text-[10px] font-mono text-orange-400/80">
-                      {r.daysSince == null ? "NEVER" : `STALE (${r.daysSince}d)`}
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">
+                      {r.daysSince == null ? "NEVER" : `${r.daysSince}d stale`}
                     </span>
                   </div>
-                  <h3 className="font-medium">{r.person.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Target cadence: every {r.person.target_cadence_days} days
+                  <h3 className="font-semibold text-white group-hover:text-primary transition-colors text-base">{r.person.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
+                    Reach out every {r.person.target_cadence_days} days
                   </p>
                 </Link>
               ))}
@@ -123,12 +125,12 @@ function TodayPage() {
           )}
         </Section>
 
-        <section className="bg-accent/[0.03] border border-accent/10 rounded-xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[60px] rounded-full pointer-events-none" />
+        <section className="glass-panel bg-primary/[0.02] border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-accent animate-pulse" />
-              <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-accent">
+            <div className="flex items-center gap-2.5">
+              <span className="size-2 rounded-full bg-primary animate-pulse" />
+              <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
                 Insights Engine
               </h2>
             </div>
@@ -136,7 +138,7 @@ function TodayPage() {
               <button
                 onClick={() => setNudgesOn(true)}
                 disabled={empty}
-                className="text-[10px] font-mono uppercase tracking-widest text-accent hover:underline underline-offset-4 disabled:opacity-30"
+                className="text-[10px] font-bold uppercase tracking-widest text-primary hover:text-white transition-colors disabled:opacity-30"
               >
                 Generate →
               </button>
@@ -144,7 +146,7 @@ function TodayPage() {
           </div>
 
           {!nudgesOn && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               AI executive assistant. Click Generate to get today's three most important actions,
               based on cadence, promises, and dates.
             </p>
@@ -168,15 +170,15 @@ function TodayPage() {
                   onClick={() =>
                     navigate({ to: "/people/$id", params: { id: n.person_id } })
                   }
-                  className="flex items-start gap-4 text-left w-full"
+                  className="flex items-start gap-4 text-left w-full hover:bg-white/[0.02] p-2.5 rounded-2xl transition-colors group"
                 >
-                  <div className="mt-1.5 text-accent">
-                    <div className="size-1.5 border-t border-r border-accent rotate-45" />
+                  <div className="mt-1.5 text-primary">
+                    <div className="size-1.5 border-t-2 border-r-2 border-primary rotate-45 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                   <p className="text-sm leading-relaxed">
-                    <span className="text-foreground font-medium">{n.headline}:</span>{" "}
+                    <span className="text-white font-semibold">{n.headline}:</span>{" "}
                     <span className="text-muted-foreground">{n.reason}</span>{" "}
-                    <span className="text-accent">— {n.suggested_action}</span>
+                    <span className="text-primary font-medium">— {n.suggested_action}</span>
                   </p>
                 </button>
               ))}
@@ -186,21 +188,23 @@ function TodayPage() {
 
         <Section title="Open promises">
           {(d?.promises.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">No open promises.</p>
+            <div className="glass-panel p-6 rounded-3xl text-center">
+              <p className="text-sm text-muted-foreground">No open promises.</p>
+            </div>
           ) : (
-            <div className="border border-border rounded-lg bg-surface divide-y divide-border">
+            <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-white/5">
               {d?.promises.map((p) => (
-                <div key={p.id} className="p-4 flex items-center justify-between gap-4">
+                <div key={p.id} className="p-4.5 flex items-center justify-between gap-4 hover:bg-white/[0.01] transition-colors">
                   <div className="min-w-0">
-                    <p className="text-sm truncate">{p.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-sm text-white font-medium truncate">{p.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1 font-medium">
                       {(p as any).people?.name ?? "—"}
                       {p.due_at && ` · due ${format(new Date(p.due_at), "MMM d")}`}
                     </p>
                   </div>
                   <button
                     onClick={() => keepPromiseMut.mutate(p.id)}
-                    className="text-[10px] font-mono uppercase tracking-widest text-accent border border-accent/20 bg-accent/10 rounded px-2 py-1"
+                    className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3 py-1.5 hover:bg-primary hover:text-white transition-all duration-200 active:scale-95"
                   >
                     Kept
                   </button>
@@ -211,31 +215,33 @@ function TodayPage() {
         </Section>
       </div>
 
-      <aside className="col-span-12 lg:col-span-4 space-y-6">
+      <aside className="col-span-12 lg:col-span-4 space-y-8">
         <Section title="Due reminders" small>
           {(d?.reminders.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing due in the next 7 days.</p>
+            <div className="glass-panel p-5 rounded-3xl text-center">
+              <p className="text-xs text-muted-foreground">Nothing due in the next 7 days.</p>
+            </div>
           ) : (
-            <div className="bg-surface border border-border rounded-lg divide-y divide-border">
+            <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-white/5">
               {d?.reminders.map((r) => (
-                <div key={r.id} className="p-3 flex items-center justify-between gap-3">
+                <div key={r.id} className="p-4 flex items-center justify-between gap-3 hover:bg-white/[0.01] transition-colors">
                   <div className="min-w-0">
-                    <p className="text-sm truncate">{r.title}</p>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mt-1">
+                    <p className="text-xs text-white font-semibold truncate">{r.title}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">
                       {(r as any).people?.name ?? "General"} ·{" "}
                       {format(new Date(r.due_at), "MMM d")}
                     </p>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1.5 shrink-0">
                     <button
                       onClick={() => completeMut.mutate(r.id)}
-                      className="text-[10px] font-mono uppercase tracking-widest text-accent border border-accent/20 bg-accent/10 rounded px-2 py-1"
+                      className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3 py-1 hover:bg-primary hover:text-white transition-all active:scale-95"
                     >
                       Done
                     </button>
                     <button
                       onClick={() => snoozeMut.mutate(r.id)}
-                      className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground border border-border rounded px-2 py-1"
+                      className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground border border-white/5 bg-white/[0.02] rounded-full px-3 py-1 hover:bg-white/[0.06] transition-all active:scale-95"
                     >
                       +3d
                     </button>
@@ -247,11 +253,11 @@ function TodayPage() {
         </Section>
 
         <Section title="Roster health" small>
-          <div className="bg-surface border border-border rounded-lg p-5 text-center">
-            <div className="mx-auto mb-3">
-              <HealthRing score={average(Object.values(d?.scoresById ?? {}))} size={72} />
+          <div className="glass-panel rounded-3xl p-6 text-center shadow-lg">
+            <div className="mx-auto mb-3.5 flex justify-center">
+              <HealthRing score={average(Object.values(d?.scoresById ?? {}))} size={80} />
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs font-semibold text-muted-foreground">
               Across {d?.totalPeople ?? 0} contacts
             </p>
           </div>
@@ -279,14 +285,14 @@ function Section({
 }) {
   return (
     <section>
-      <header className="flex items-center justify-between mb-4">
+      <header className="flex items-center justify-between mb-3.5 px-1">
         <h2
-          className={`font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground ${small ? "text-[10px]" : "text-xs"}`}
+          className={`font-semibold uppercase tracking-[0.2em] text-muted-foreground/80 ${small ? "text-[9px]" : "text-[10px]"}`}
         >
           {title}
         </h2>
         {badge && (
-          <span className="text-[10px] font-mono text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+          <span className="text-[9px] font-bold uppercase tracking-wide text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
             {badge}
           </span>
         )}
@@ -300,7 +306,7 @@ function Initials({ name }: { name: string }) {
   const parts = name.split(" ").filter(Boolean);
   const s = ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
   return (
-    <div className="size-10 rounded bg-background border border-border grid place-items-center font-mono text-sm text-muted-foreground">
+    <div className="size-10 rounded-2xl bg-white/[0.04] border border-white/[0.06] grid place-items-center font-semibold text-xs text-white">
       {s}
     </div>
   );
@@ -308,15 +314,16 @@ function Initials({ name }: { name: string }) {
 
 function EmptyState() {
   return (
-    <div className="border border-dashed border-border rounded-xl p-10 text-center bg-surface/50">
-      <h3 className="font-medium mb-2">Your roster is empty.</h3>
-      <p className="text-sm text-muted-foreground mb-5">
+    <div className="glass-panel rounded-3xl p-10 text-center relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] rounded-full pointer-events-none" />
+      <h3 className="font-semibold text-lg text-white mb-2">Your roster is empty.</h3>
+      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
         Add your first person to start tracking relationships. Once you have a few contacts, the
         Insights Engine will surface who to reach out to.
       </p>
       <Link
         to="/people"
-        className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 rounded text-xs font-bold uppercase tracking-widest"
+        className="inline-flex items-center gap-2 bg-[#F2F2F7] hover:bg-white text-black px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-lg"
       >
         Add someone
       </Link>

@@ -105,28 +105,30 @@ function PersonPage() {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-8">
+    <div className="grid grid-cols-12 gap-8 max-w-5xl mx-auto">
       <div className="col-span-12 lg:col-span-8 space-y-8">
         <header className="flex items-start justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="size-16 rounded-full bg-surface border border-border grid place-items-center text-lg font-mono">
+          <div className="flex items-center gap-4.5">
+            <div className="size-16 rounded-3xl bg-white/[0.04] border border-white/10 grid place-items-center text-xl font-bold text-white shadow-inner">
               {initials(person.name)}
             </div>
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
                 {person.relationship_type}
               </p>
-              <h1 className="text-3xl font-bold tracking-tight">{person.name}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h1 className="text-3xl font-extrabold tracking-tight text-white mt-0.5">{person.name}</h1>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
                 {[person.role, person.company].filter(Boolean).join(" · ") || "—"}
                 {person.location && ` · ${person.location}`}
               </p>
             </div>
           </div>
-          <HealthRing score={health.score} size={64} />
+          <div className="flex items-center">
+            <HealthRing score={health.score} size={64} />
+          </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatBlock label="Last contact">
             {health.daysSinceLastInteraction == null
               ? "Never"
@@ -142,42 +144,43 @@ function PersonPage() {
         </div>
 
         {/* Meeting prep */}
-        <section className="bg-accent/[0.03] border border-accent/10 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-accent">
+        <section className="glass-panel bg-primary/[0.02] border-primary/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] rounded-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
               Meeting prep
             </h2>
             <button
               onClick={runBrief}
               disabled={briefBusy}
-              className="text-[10px] font-mono uppercase tracking-widest text-accent hover:underline underline-offset-4 disabled:opacity-30"
+              className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-white transition-colors disabled:opacity-30"
             >
               {briefBusy ? "Thinking…" : brief ? "Regenerate →" : "Generate →"}
             </button>
           </div>
           {brief ? (
-            <div className="text-sm leading-relaxed whitespace-pre-wrap">{brief}</div>
+            <div className="text-sm leading-relaxed text-white/90 whitespace-pre-wrap">{brief}</div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Generate an AI brief combining profile, timeline, notes, and open promises.
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Generate an AI brief combining profile, timeline, notes, and open promises. (Note: AI is currently stubbed).
             </p>
           )}
         </section>
 
         {/* Log interaction */}
-        <section>
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        <section className="space-y-3.5">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Log interaction
           </h2>
-          <div className="bg-surface border border-border rounded-lg p-4 space-y-3">
-            <div className="flex gap-2">
+          <div className="glass-panel rounded-3xl p-5">
+            <div className="flex gap-2.5 flex-col sm:flex-row">
               <select
                 value={intType}
                 onChange={(e) => setIntType(e.target.value as any)}
-                className="bg-background border border-border rounded px-2 py-1.5 text-xs capitalize"
+                className="bg-[#1c1c1e] text-white border border-white/5 rounded-2xl px-4.5 py-3 text-xs capitalize focus:outline-none focus:border-primary/50"
               >
                 {INTERACTION_TYPES.map((t) => (
-                  <option key={t} value={t}>
+                  <option key={t} value={t} className="bg-[#1c1c1e] text-white">
                     {t}
                   </option>
                 ))}
@@ -186,7 +189,7 @@ function PersonPage() {
                 placeholder="Summary (e.g. discussed Berlin move)"
                 value={intSummary}
                 onChange={(e) => setIntSummary(e.target.value)}
-                className="flex-1 bg-background border border-border rounded px-3 py-1.5 text-sm"
+                className="flex-1 glass-input rounded-2xl px-4 py-3 text-xs text-white focus:outline-none"
               />
               <button
                 onClick={async () => {
@@ -197,7 +200,7 @@ function PersonPage() {
                   setIntSummary("");
                   invalidate();
                 }}
-                className="bg-foreground text-background px-4 py-1.5 rounded text-xs font-bold uppercase tracking-widest"
+                className="bg-[#F2F2F7] hover:bg-white text-black px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md"
               >
                 Log
               </button>
@@ -206,24 +209,26 @@ function PersonPage() {
         </section>
 
         {/* Timeline */}
-        <section>
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+        <section className="space-y-4">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Timeline
           </h2>
           {interactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No interactions logged yet.</p>
+            <div className="glass-panel p-6 rounded-3xl text-center">
+              <p className="text-sm text-muted-foreground">No interactions logged yet.</p>
+            </div>
           ) : (
-            <div className="border-l border-border ml-2 pl-6 space-y-5">
+            <div className="border-l border-white/5 ml-3 pl-6 space-y-6 relative py-1">
               {interactions.map((i) => (
                 <div key={i.id} className="relative">
-                  <div className="absolute -left-[31px] top-1.5 size-2 rounded-full bg-accent ring-4 ring-background" />
-                  <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest">
-                    <span className="text-accent">{i.type}</span>
-                    <span className="text-muted-foreground">
+                  <div className="absolute -left-[31px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-[#050508]" />
+                  <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
+                    <span className="text-primary">{i.type}</span>
+                    <span className="text-muted-foreground/70 font-medium">
                       {formatDistanceToNow(new Date(i.occurred_at), { addSuffix: true })}
                     </span>
                   </div>
-                  {i.summary && <p className="text-sm mt-1 leading-relaxed">{i.summary}</p>}
+                  {i.summary && <p className="text-sm mt-1.5 leading-relaxed text-white font-medium">{i.summary}</p>}
                 </div>
               ))}
             </div>
@@ -231,8 +236,8 @@ function PersonPage() {
         </section>
 
         {/* Auto-summarize notes */}
-        <section className="bg-surface border border-border rounded-lg p-5">
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        <section className="glass-panel rounded-3xl p-5 space-y-4 shadow-xl">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Summarize raw notes with AI
           </h2>
           <textarea
@@ -240,34 +245,34 @@ function PersonPage() {
             placeholder="Paste raw meeting notes…"
             value={rawNotes}
             onChange={(e) => setRawNotes(e.target.value)}
-            className="w-full bg-background border border-border rounded p-3 text-sm font-mono"
+            className="w-full glass-input rounded-2xl p-4 text-xs font-mono text-white focus:outline-none"
           />
-          <div className="flex justify-end mt-2">
+          <div className="flex justify-end">
             <button
               onClick={runSummarize}
               disabled={summaryBusy}
-              className="text-xs font-bold uppercase tracking-widest bg-foreground text-background px-3 py-1.5 rounded disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#F2F2F7] hover:bg-white text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-50"
             >
               {summaryBusy ? "Summarizing…" : "Summarize"}
             </button>
           </div>
           {summaryResult && (
-            <div className="mt-4 space-y-3 text-sm">
+            <div className="mt-4 space-y-4 text-sm border-t border-white/5 pt-4">
               <div>
-                <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                   Summary
                 </p>
-                <p>{summaryResult.summary}</p>
+                <p className="text-white mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
               </div>
               {summaryResult.actions?.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                     Actions
                   </p>
-                  <ul className="list-disc pl-5">
+                  <ul className="list-disc pl-5 mt-1.5 space-y-1.5 text-white/90">
                     {summaryResult.actions.map((a: any, i: number) => (
-                      <li key={i}>
-                        <span className="text-accent">{a.owner}:</span> {a.description}
+                      <li key={i} className="text-xs">
+                        <span className="text-primary font-bold">{a.owner}:</span> {a.description}
                       </li>
                     ))}
                   </ul>
@@ -278,19 +283,19 @@ function PersonPage() {
         </section>
       </div>
 
-      <aside className="col-span-12 lg:col-span-4 space-y-6">
+      <aside className="col-span-12 lg:col-span-4 space-y-8">
         {/* Notes */}
-        <section>
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        <section className="space-y-3.5">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Notes
           </h2>
-          <div className="bg-surface border border-border rounded-lg p-4 space-y-3">
+          <div className="glass-panel rounded-3xl p-5 space-y-3">
             <textarea
               rows={3}
-              placeholder="Add a note (markdown ok)…"
+              placeholder="Add a note…"
               value={noteBody}
               onChange={(e) => setNoteBody(e.target.value)}
-              className="w-full bg-background border border-border rounded p-2 text-sm"
+              className="w-full glass-input rounded-2xl p-3 text-xs text-white focus:outline-none"
             />
             <div className="flex justify-end">
               <button
@@ -300,28 +305,28 @@ function PersonPage() {
                   setNoteBody("");
                   invalidate();
                 }}
-                className="text-xs font-bold uppercase tracking-widest bg-foreground text-background px-3 py-1.5 rounded"
+                className="px-4 py-2 bg-[#F2F2F7] hover:bg-white text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95"
               >
                 Save note
               </button>
             </div>
           </div>
-          <div className="mt-3 space-y-2">
+          <div className="space-y-3">
             {notes.map((n) => (
-              <div key={n.id} className="bg-surface border border-border rounded-lg p-3 text-sm">
+              <div key={n.id} className="glass-panel rounded-3xl p-4.5 text-sm relative group">
                 <div className="flex justify-between items-start gap-2">
-                  <p className="whitespace-pre-wrap flex-1">{n.body}</p>
+                  <p className="whitespace-pre-wrap flex-1 text-white font-medium text-xs leading-relaxed">{n.body}</p>
                   <button
                     onClick={async () => {
                       await removeN({ data: { id: n.id } });
                       invalidate();
                     }}
-                    className="text-[10px] font-mono text-muted-foreground hover:text-destructive"
+                    className="size-6 rounded-full bg-white/[0.04] border border-white/5 items-center justify-center text-muted-foreground hover:text-destructive flex transition-colors text-xs"
                   >
                     ×
                   </button>
                 </div>
-                <p className="text-[10px] font-mono text-muted-foreground mt-2">
+                <p className="text-[9px] font-semibold tracking-wide text-muted-foreground/80 mt-3.5">
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                 </p>
               </div>
@@ -330,34 +335,34 @@ function PersonPage() {
         </section>
 
         {/* Structured fields */}
-        <section>
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        <section className="space-y-3.5">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Details
           </h2>
-          <div className="bg-surface border border-border rounded-lg p-4">
-            <div className="grid grid-cols-3 gap-1 mb-3">
+          <div className="glass-panel rounded-3xl p-5 space-y-4">
+            <div className="grid grid-cols-1 gap-2.5">
               <select
                 value={fieldCategory}
                 onChange={(e) => setFieldCategory(e.target.value)}
-                className="bg-background border border-border rounded px-2 py-1 text-xs capitalize"
+                className="bg-[#1c1c1e] text-white border border-white/5 rounded-2xl px-4 py-2.5 text-xs capitalize focus:outline-none"
               >
                 {["family", "pet", "favorite", "allergy", "interest", "custom"].map((c) => (
-                  <option key={c} value={c}>
+                  <option key={c} value={c} className="bg-[#1c1c1e] text-white">
                     {c}
                   </option>
                 ))}
               </select>
               <input
-                placeholder="Key"
+                placeholder="Key (e.g. Spouse name)"
                 value={fieldKey}
                 onChange={(e) => setFieldKey(e.target.value)}
-                className="bg-background border border-border rounded px-2 py-1 text-xs"
+                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
               />
               <input
                 placeholder="Value"
                 value={fieldValue}
                 onChange={(e) => setFieldValue(e.target.value)}
-                className="bg-background border border-border rounded px-2 py-1 text-xs"
+                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
               />
             </div>
             <button
@@ -375,29 +380,29 @@ function PersonPage() {
                 setFieldValue("");
                 invalidate();
               }}
-              className="w-full text-[10px] font-mono uppercase tracking-widest border border-border rounded py-1 hover:bg-background"
+              className="w-full text-[10px] font-bold uppercase tracking-wider border border-white/10 hover:bg-white/[0.04] rounded-full py-2 text-white transition-all active:scale-95"
             >
               + Add field
             </button>
-            <div className="mt-3 divide-y divide-border">
+            <div className="mt-4 divide-y divide-white/5">
               {fields.map((f) => (
                 <div
                   key={f.id}
-                  className="flex justify-between items-baseline py-2 text-sm"
+                  className="flex justify-between items-baseline py-3 text-xs hover:bg-white/[0.01] transition-colors rounded px-1"
                 >
                   <div className="min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mr-2">
+                    <span className="text-[8px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded-md mr-2">
                       {f.category}
                     </span>
-                    <span className="font-medium">{f.key}</span>
-                    {f.value && <span className="text-muted-foreground ml-2">{f.value}</span>}
+                    <span className="font-semibold text-white">{f.key}</span>
+                    {f.value && <span className="text-muted-foreground ml-2 font-medium">{f.value}</span>}
                   </div>
                   <button
                     onClick={async () => {
                       await removeF({ data: { id: f.id } });
                       invalidate();
                     }}
-                    className="text-[10px] text-muted-foreground hover:text-destructive"
+                    className="text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-2"
                   >
                     ×
                   </button>
@@ -408,17 +413,17 @@ function PersonPage() {
         </section>
 
         {/* Promises */}
-        <section>
-          <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        <section className="space-y-3.5">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
             Promises
           </h2>
-          <div className="bg-surface border border-border rounded-lg p-4 space-y-3">
+          <div className="glass-panel rounded-3xl p-5 space-y-4">
             <div className="flex gap-2">
               <input
                 placeholder="I promised to…"
                 value={promiseText}
                 onChange={(e) => setPromiseText(e.target.value)}
-                className="flex-1 bg-background border border-border rounded px-3 py-1.5 text-sm"
+                className="flex-1 glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
               />
               <button
                 onClick={async () => {
@@ -427,16 +432,16 @@ function PersonPage() {
                   setPromiseText("");
                   invalidate();
                 }}
-                className="text-[10px] font-mono uppercase tracking-widest border border-border rounded px-2"
+                className="text-[10px] font-bold uppercase tracking-wider border border-white/10 hover:bg-white/[0.04] rounded-full px-4.5 text-white transition-all active:scale-95"
               >
                 Add
               </button>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-white/5">
               {promises.map((p) => (
-                <div key={p.id} className="py-2 flex items-center justify-between gap-2">
+                <div key={p.id} className="py-2.5 flex items-center justify-between gap-2">
                   <span
-                    className={`text-sm ${p.status !== "open" ? "line-through text-muted-foreground" : ""}`}
+                    className={`text-xs font-medium ${p.status !== "open" ? "line-through text-muted-foreground/50" : "text-white"}`}
                   >
                     {p.description}
                   </span>
@@ -446,7 +451,7 @@ function PersonPage() {
                         await resolveProm({ data: { id: p.id, status: "kept" } });
                         invalidate();
                       }}
-                      className="text-[10px] font-mono uppercase tracking-widest text-accent bg-accent/10 border border-accent/20 rounded px-2 py-0.5"
+                      className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1 hover:bg-primary hover:text-white transition-all active:scale-95"
                     >
                       Kept
                     </button>
@@ -467,7 +472,7 @@ function PersonPage() {
               toast.success("Deleted");
               navigate({ to: "/people" });
             }}
-            className="w-full text-xs font-mono uppercase tracking-widest text-destructive border border-destructive/30 rounded py-2 hover:bg-destructive/10"
+            className="w-full text-xs font-bold uppercase tracking-wider text-destructive border border-destructive/20 hover:bg-destructive/10 rounded-full py-3.5 transition-all duration-200 active:scale-95"
           >
             Delete person
           </button>
@@ -479,11 +484,11 @@ function PersonPage() {
 
 function StatBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface border border-border rounded-lg p-3">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+    <div className="glass-panel rounded-3xl p-4 shadow-lg">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-sm font-medium">{children}</p>
+      <p className="mt-1 text-sm font-bold text-white leading-tight">{children}</p>
     </div>
   );
 }
@@ -491,4 +496,4 @@ function StatBlock({ label, children }: { label: string; children: React.ReactNo
 function initials(name: string) {
   const parts = name.split(" ").filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
-}
+}

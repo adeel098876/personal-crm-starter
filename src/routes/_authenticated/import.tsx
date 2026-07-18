@@ -22,14 +22,12 @@ type Source = "vcard" | "csv" | "google";
 function ImportPage() {
   const qc = useQueryClient();
   const preview = useServerFn(previewAndImport);
-  const commit = useServerFn(commitReview);
   const list = useServerFn(listImports);
 
   const [source, setSource] = useState<Source>("vcard");
-  const [reviewQueue, setReviewQueue] = useState<ContactPrediction[]>([]);
-  const [batchId, setBatchId] = useState<string | undefined>();
   const [autoImported, setAutoImported] = useState(0);
   const [skipped, setSkipped] = useState(0);
+  const [importedStatus, setImportedStatus] = useState(false);
 
   const history = useQuery({ queryKey: ["import-batches"], queryFn: () => list() });
 
@@ -56,15 +54,14 @@ function ImportPage() {
       return res;
     },
     onSuccess: (res) => {
-      setReviewQueue(res.review);
-      setBatchId(res.batch?.id);
       setAutoImported(res.autoImported);
       setSkipped(res.skippedDuplicates);
+      setImportedStatus(true);
       qc.invalidateQueries({ queryKey: ["people"] });
       qc.invalidateQueries({ queryKey: ["import-batches"] });
-      if (res.autoImported > 0) toast.success(`Auto-imported ${res.autoImported} confident matches`);
-      if (res.review.length === 0 && res.autoImported === 0 && res.skippedDuplicates > 0) {
-        toast.info("All contacts already exist — nothing to do.");
+      if (res.autoImported > 0) toast.success(`Imported ${res.autoImported} contacts successfully`);
+      if (res.autoImported === 0 && res.skippedDuplicates > 0) {
+        toast.info("All contacts already exist — skipped duplicates.");
       }
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Import failed"),
@@ -82,24 +79,23 @@ function ImportPage() {
       toast.error("Max 2000 contacts per import. Split the file.");
       return;
     }
-    toast.info(`Parsed ${contacts.length} contacts. AI is classifying…`);
+    toast.info(`Parsed ${contacts.length} contacts. Importing…`);
     runImport.mutate(contacts);
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-8 max-w-4xl">
       <header>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
           Ingest
         </p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">Import contacts</h1>
-        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          Bring in contacts from Google, Apple, or any address book. AI infers relationship
-          and cadence — high-confidence matches are auto-imported, the rest go to a review queue.
+        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-white to-[#AEAEB2]">Import contacts</h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+          Bring in contacts from Google, Apple, or any address book. Contacts are imported immediately with default relationships. You can refine them anytime.
         </p>
       </header>
 
-      <div className="flex gap-1 text-xs font-mono uppercase tracking-widest">
+      <div className="flex gap-2 text-[10px] font-semibold uppercase tracking-wider">
         {([
           { key: "vcard", label: "vCard (.vcf)" },
           { key: "csv", label: "CSV" },
@@ -107,8 +103,15 @@ function ImportPage() {
         ] as const).map((t) => (
           <button
             key={t.key}
-            onClick={() => setSource(t.key)}
-            className={`px-3 py-1.5 rounded border ${source === t.key ? "border-accent/40 text-accent" : "border-border text-muted-foreground"}`}
+            onClick={() => {
+              setSource(t.key);
+              setImportedStatus(false);
+            }}
+            className={`px-4 py-2 rounded-full border transition-all ${
+              source === t.key
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : "border-white/5 bg-white/[0.02] text-muted-foreground hover:text-white"
+            }`}
           >
             {t.label}
           </button>
@@ -118,7 +121,7 @@ function ImportPage() {
       {source === "vcard" && (
         <UploadCard
           title="Drop a .vcf file"
-          hint="On iPhone: Contacts → select all → Share → AirDrop to Mac → drag file here. On Mac: Contacts → File → Export → vCard."
+          hint="On iPhone: Contacts → Select All → Share → AirDrop to computer. On Mac: Contacts → File → Export → vCard."
           accept=".vcf,text/vcard"
           onFile={handleFile}
           busy={runImport.isPending}
@@ -127,14 +130,14 @@ function ImportPage() {
       {source === "csv" && (
         <UploadCard
           title="Drop a .csv file"
-          hint="Works with Google Contacts CSV, Apple Contacts CSV, or any spreadsheet with name/email/phone/company columns."
+          hint="Works with Google Contacts CSV, Apple Contacts CSV, or any spreadsheet containing name, email, phone, and company columns."
           accept=".csv,text/csv"
           onFile={handleFile}
           busy={runImport.isPending}
         />
       )}
       {source === "google" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <UploadCard
             title="Drop your Google Contacts export"
             hint="Go to contacts.google.com → left sidebar → Export → Google CSV → download → drop the .csv here."
@@ -142,53 +145,36 @@ function ImportPage() {
             onFile={handleFile}
             busy={runImport.isPending}
           />
-          <p className="text-xs text-muted-foreground">
-            Real-time Google OAuth sync (People API) is on the roadmap. For now the CSV export
-            captures the same data and works offline.
+          <p className="text-xs text-muted-foreground/60 leading-relaxed pl-1">
+            Real-time Google OAuth sync is on the roadmap. For now the CSV export captures all details and works offline.
           </p>
         </div>
       )}
 
-      {(autoImported > 0 || skipped > 0 || reviewQueue.length > 0) && (
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          <Stat label="Auto-imported" value={autoImported} accent />
-          <Stat label="Needs review" value={reviewQueue.length} />
+      {importedStatus && (
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <Stat label="Imported" value={autoImported} accent />
           <Stat label="Duplicates skipped" value={skipped} />
         </div>
       )}
 
-      {reviewQueue.length > 0 && (
-        <ReviewTable
-          queue={reviewQueue}
-          onCommit={async (items) => {
-            const res = await commit({ data: { batch_id: batchId, source, items } });
-            toast.success(`Imported ${res.imported} more contacts`);
-            setReviewQueue([]);
-            qc.invalidateQueries({ queryKey: ["people"] });
-            qc.invalidateQueries({ queryKey: ["import-batches"] });
-            qc.invalidateQueries({ queryKey: ["dashboard"] });
-          }}
-        />
-      )}
-
-      <section>
-        <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-2">
+      <section className="space-y-4">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
           Recent imports
         </h2>
-        <div className="border border-border rounded-lg bg-surface divide-y divide-border">
+        <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-white/5">
           {history.data?.batches.length === 0 && (
             <p className="p-6 text-center text-sm text-muted-foreground">No imports yet.</p>
           )}
           {history.data?.batches.map((b: any) => (
-            <div key={b.id} className="p-3 flex items-center justify-between text-sm">
+            <div key={b.id} className="p-4 flex items-center justify-between text-sm hover:bg-white/[0.01] transition-colors">
               <div>
-                <p className="font-mono text-xs uppercase text-muted-foreground">{b.source}</p>
-                <p>
-                  {b.total_imported} imported · {b.total_skipped} dupes ·{" "}
-                  {b.total_review} review · <span className="capitalize">{b.status}</span>
+                <p className="font-semibold text-xs uppercase tracking-wide text-primary">{b.source}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  {b.total_imported} imported · {b.total_skipped} duplicates skipped
                 </p>
               </div>
-              <p className="text-[10px] font-mono text-muted-foreground">
+              <p className="text-[10px] font-mono text-muted-foreground/80">
                 {format(new Date(b.created_at), "MMM d, HH:mm")}
               </p>
             </div>
@@ -201,11 +187,11 @@ function ImportPage() {
 
 function Stat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
-    <div className="border border-border rounded-lg bg-surface p-4">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+    <div className="glass-panel p-5 rounded-3xl shadow-lg">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className={`text-2xl font-bold mt-1 ${accent ? "text-accent" : ""}`}>{value}</p>
+      <p className={`text-2xl font-bold mt-1 ${accent ? "text-primary" : "text-white"}`}>{value}</p>
     </div>
   );
 }
@@ -237,12 +223,19 @@ function UploadCard({
         const f = e.dataTransfer.files?.[0];
         if (f) onFile(f);
       }}
-      className={`block cursor-pointer border-2 border-dashed rounded-xl p-10 text-center transition-colors ${
-        dragging ? "border-accent/50 bg-accent/5" : "border-border bg-surface hover:border-accent/30"
+      className={`block cursor-pointer border border-dashed rounded-3xl p-12 text-center transition-all duration-300 ${
+        dragging ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl" : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 hover:shadow-xl"
       }`}
     >
-      <p className="text-lg font-semibold">{busy ? "Processing…" : title}</p>
-      <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto">{hint}</p>
+      <div className="mx-auto size-12 mb-4 bg-white/[0.04] rounded-2xl border border-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" x2="12" y1="3" y2="15"/>
+        </svg>
+      </div>
+      <p className="text-base font-semibold text-white">{busy ? "Processing contacts…" : title}</p>
+      <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">{hint}</p>
       <input
         type="file"
         accept={accept}
@@ -253,168 +246,9 @@ function UploadCard({
           if (f) onFile(f);
         }}
       />
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mt-4">
-        Click or drag file
+      <p className="text-[10px] font-bold uppercase tracking-wider text-primary mt-5">
+        Click or drag file here
       </p>
     </label>
   );
-}
-
-function ReviewTable({
-  queue,
-  onCommit,
-}: {
-  queue: ContactPrediction[];
-  onCommit: (
-    items: Array<{
-      contact: ContactPrediction["contact"];
-      relationship_type: string;
-      target_cadence_days: number;
-      skip: boolean;
-    }>,
-  ) => Promise<void>;
-}) {
-  const [state, setState] = useState(() =>
-    queue.map((q) => ({
-      contact: q.contact,
-      relationship_type: q.relationship_type,
-      target_cadence_days: q.target_cadence_days,
-      skip: false,
-      confidence: q.confidence,
-      reason: q.reason,
-    })),
-  );
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <div className="border border-border rounded-lg bg-surface overflow-hidden">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold">Review low-confidence predictions</p>
-          <p className="text-xs text-muted-foreground">
-            Edit or skip. Then commit to import the rest.
-          </p>
-        </div>
-        <button
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await onCommit(
-                state.map((s) => ({
-                  contact: s.contact,
-                  relationship_type: s.relationship_type,
-                  target_cadence_days: s.target_cadence_days,
-                  skip: s.skip,
-                })),
-              );
-            } finally {
-              setBusy(false);
-            }
-          }}
-          className="bg-foreground text-background px-4 py-2 rounded text-xs font-bold uppercase tracking-widest disabled:opacity-50"
-        >
-          {busy ? "Committing…" : "Commit"}
-        </button>
-      </div>
-      <div className="overflow-x-auto max-h-[520px]">
-        <table className="w-full text-sm">
-          <thead className="bg-background/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="text-left px-3 py-2">Contact</th>
-              <th className="text-left px-3 py-2">Company</th>
-              <th className="text-left px-3 py-2">Type</th>
-              <th className="text-left px-3 py-2">Cadence</th>
-              <th className="text-left px-3 py-2">Confidence</th>
-              <th className="text-left px-3 py-2">Skip</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {state.map((s, i) => (
-              <tr key={i} className={s.skip ? "opacity-40" : ""}>
-                <td className="px-3 py-2">
-                  <p className="font-medium">{s.contact.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono">
-                    {s.contact.email || s.contact.phone || "—"}
-                  </p>
-                </td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">
-                  {[s.contact.company, s.contact.role].filter(Boolean).join(" · ") || "—"}
-                </td>
-                <td className="px-3 py-2">
-                  <select
-                    value={s.relationship_type}
-                    onChange={(e) =>
-                      setState((prev) => {
-                        const next = [...prev];
-                        next[i] = { ...next[i], relationship_type: e.target.value as any };
-                        return next;
-                      })
-                    }
-                    className="bg-background border border-border rounded px-2 py-1 text-xs capitalize"
-                  >
-                    {[
-                      "family",
-                      "friend",
-                      "partner",
-                      "coworker",
-                      "manager",
-                      "client",
-                      "mentor",
-                      "mentee",
-                      "investor",
-                      "acquaintance",
-                      "other",
-                    ].map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={s.target_cadence_days}
-                    onChange={(e) =>
-                      setState((prev) => {
-                        const next = [...prev];
-                        next[i] = {
-                          ...next[i],
-                          target_cadence_days: parseInt(e.target.value || "30", 10),
-                        };
-                        return next;
-                      })
-                    }
-                    className="w-20 bg-background border border-border rounded px-2 py-1 text-xs font-mono"
-                  />
-                </td>
-                <td className="px-3 py-2 text-xs font-mono">
-                  {Math.round(s.confidence * 100)}%
-                  <p className="text-[10px] text-muted-foreground max-w-[220px] truncate">
-                    {s.reason}
-                  </p>
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={s.skip}
-                    onChange={(e) =>
-                      setState((prev) => {
-                        const next = [...prev];
-                        next[i] = { ...next[i], skip: e.target.checked };
-                        return next;
-                      })
-                    }
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+}

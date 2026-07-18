@@ -196,36 +196,22 @@ export const previewAndImport = createServerFn({ method: "POST" })
       };
     }
 
-    const predictions = await predictBatch(fresh);
-    const byIndex = new Map(predictions.map((p) => [p.index, p]));
-
-    const autoRows: any[] = [];
-    const review: ContactPrediction[] = [];
-
-    fresh.forEach((c, idx) => {
-      const p = byIndex.get(idx);
-      if (!p) return;
-      if (p.confidence >= AUTO_IMPORT_THRESHOLD) {
-        autoRows.push({
-          user_id: userId,
-          name: c.name,
-          email: c.email || null,
-          phone: c.phone || null,
-          company: c.company || null,
-          role: c.role || null,
-          birthday: c.birthday || null,
-          bio: c.notes || null,
-          location: c.address || null,
-          relationship_type: p.relationship_type,
-          target_cadence_days: p.target_cadence_days,
-          import_source: data.source,
-          external_id: c.external_id || null,
-          tags: [],
-        });
-      } else {
-        review.push({ ...p, contact: c });
-      }
-    });
+    const autoRows = fresh.map((c) => ({
+      user_id: userId,
+      name: c.name,
+      email: c.email || null,
+      phone: c.phone || null,
+      company: c.company || null,
+      role: c.role || null,
+      birthday: c.birthday || null,
+      bio: c.notes || null,
+      location: c.address || null,
+      relationship_type: "friend", // Default to friend
+      target_cadence_days: 30, // Default to 30 days
+      import_source: data.source,
+      external_id: c.external_id || null,
+      tags: [],
+    }));
 
     let imported = 0;
     if (autoRows.length > 0) {
@@ -241,12 +227,12 @@ export const previewAndImport = createServerFn({ method: "POST" })
       .insert({
         user_id: userId,
         source: data.source,
-        status: review.length ? "draft" : "completed",
+        status: "completed",
         total_parsed: data.contacts.length,
         total_imported: imported,
         total_skipped: skippedDuplicates,
-        total_review: review.length,
-        stats: { threshold: AUTO_IMPORT_THRESHOLD },
+        total_review: 0,
+        stats: { threshold: "none_direct_import" },
       })
       .select()
       .single();
@@ -255,7 +241,7 @@ export const previewAndImport = createServerFn({ method: "POST" })
       batch,
       autoImported: imported,
       skippedDuplicates,
-      review,
+      review: [] as ContactPrediction[],
     };
   });
 

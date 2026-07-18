@@ -38,17 +38,17 @@ function PeoplePage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-5xl">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             Roster
           </p>
-          <h1 className="text-3xl font-bold tracking-tight mt-1">People</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-white to-[#AEAEB2]">People</h1>
         </div>
         <button
           onClick={() => setOpenCreate(true)}
-          className="bg-foreground text-background px-4 py-2 rounded text-xs font-bold uppercase tracking-widest"
+          className="bg-[#F2F2F7] hover:bg-white text-black px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-lg"
         >
           Add person
         </button>
@@ -58,58 +58,60 @@ function PeoplePage() {
         placeholder="Filter by name…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm bg-surface border border-border rounded-md py-2 px-3 text-sm focus:outline-none focus:border-accent/50"
+        className="w-full max-w-sm glass-input rounded-2xl py-2.5 px-4 text-xs text-white focus:outline-none"
       />
 
-      <div className="overflow-hidden border border-border rounded-lg bg-surface">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-background/50 text-muted-foreground text-[10px] font-mono uppercase tracking-wider">
-            <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Relationship</th>
-              <th className="px-4 py-3 font-medium">Company</th>
-              <th className="px-4 py-3 font-medium">Cadence</th>
-              <th className="px-4 py-3 font-medium text-right">Added</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {people.data?.people.map((p: any) => (
-              <tr key={p.id} className="hover:bg-background/50 transition-colors">
-                <td className="px-4 py-3 font-medium">
-                  <Link
-                    to="/people/$id"
-                    params={{ id: p.id }}
-                    className="hover:text-accent"
-                  >
-                    {p.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground capitalize">
-                  {p.relationship_type}
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {[p.role, p.company].filter(Boolean).join(" · ") || "—"}
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                  every {p.target_cadence_days}d
-                </td>
-                <td className="px-4 py-3 text-right text-xs text-muted-foreground font-mono">
-                  {formatDistanceToNow(new Date(p.created_at), { addSuffix: true })}
-                </td>
-              </tr>
-            ))}
-            {people.data && people.data.people.length === 0 && (
+      <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-white/[0.02] text-muted-foreground/80 text-[10px] font-semibold uppercase tracking-wider border-b border-white/5">
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-10 text-center text-sm text-muted-foreground"
-                >
-                  No people yet. Add your first contact above.
-                </td>
+                <th className="px-5 py-3.5 font-semibold">Name</th>
+                <th className="px-5 py-3.5 font-semibold">Relationship</th>
+                <th className="px-5 py-3.5 font-semibold">Company</th>
+                <th className="px-5 py-3.5 font-semibold">Cadence</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Added</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {people.data?.people.map((p: any) => (
+                <tr key={p.id} className="hover:bg-white/[0.01] transition-colors">
+                  <td className="px-5 py-3.5 font-medium text-white">
+                    <Link
+                      to="/people/$id"
+                      params={{ id: p.id }}
+                      className="hover:text-primary transition-colors"
+                    >
+                      {p.name}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground capitalize">
+                    {p.relationship_type}
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground">
+                    {[p.role, p.company].filter(Boolean).join(" · ") || "—"}
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground font-mono">
+                    every {p.target_cadence_days}d
+                  </td>
+                  <td className="px-5 py-3.5 text-right text-xs text-muted-foreground font-mono">
+                    {formatDistanceToNow(new Date(p.created_at), { addSuffix: true })}
+                  </td>
+                </tr>
+              ))}
+              {people.data && people.data.people.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-5 py-12 text-center text-sm text-muted-foreground"
+                  >
+                    No people yet. Add your first contact above.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {openCreate && (
@@ -137,36 +139,36 @@ function CreatePersonDialog({
   const [cadence, setCadence] = useState(30);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return;
           onSubmit({ name: name.trim(), relationship_type: type, target_cadence_days: cadence });
         }}
-        className="bg-surface border border-border rounded-xl w-full max-w-md p-6 space-y-4"
+        className="glass-panel w-full max-w-md p-6.5 space-y-5 rounded-3xl shadow-2xl"
       >
-        <h2 className="text-lg font-semibold">Add someone</h2>
+        <h2 className="text-lg font-bold text-white pl-1">Add someone</h2>
         <div>
-          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
             Name
           </label>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent/50"
+            className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
               Relationship
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="mt-1 w-full bg-background border border-border rounded px-3 py-2 text-sm capitalize"
+              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none capitalize"
             >
               {[
                 "family",
@@ -181,14 +183,14 @@ function CreatePersonDialog({
                 "acquaintance",
                 "other",
               ].map((t) => (
-                <option key={t} value={t}>
+                <option key={t} value={t} className="bg-[#1c1c1e] text-white">
                   {t}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
               Cadence (days)
             </label>
             <input
@@ -197,22 +199,22 @@ function CreatePersonDialog({
               max={365}
               value={cadence}
               onChange={(e) => setCadence(parseInt(e.target.value || "30", 10))}
-              className="mt-1 w-full bg-background border border-border rounded px-3 py-2 text-sm font-mono"
+              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2.5 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-border rounded text-xs font-medium"
+            className="px-5 py-2.5 border border-white/10 hover:bg-white/[0.04] rounded-full text-xs font-semibold text-white transition-all active:scale-95"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="px-4 py-2 bg-foreground text-background rounded text-xs font-bold uppercase tracking-widest disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#F2F2F7] hover:bg-white text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
           >
             {busy ? "Adding…" : "Add"}
           </button>
