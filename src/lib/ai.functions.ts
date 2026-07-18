@@ -2,14 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const MODEL = "openai/gpt-5.5";
+const MODEL = "gpt-4o-mini";
 
 async function callAI(
   messages: Array<{ role: string; content: string }>,
   jsonSchema?: unknown,
 ) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI is not configured (missing LOVABLE_API_KEY).");
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("AI is not configured (missing OPENAI_API_KEY).");
 
   const body: Record<string, unknown> = { model: MODEL, messages };
   if (jsonSchema) {
@@ -19,9 +19,9 @@ async function callAI(
     };
   }
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
     body: JSON.stringify(body),
   });
 
