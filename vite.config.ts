@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     tailwindcss(),
-    TanStackRouterVite(),
     tanstackStart(),
     react(),
   ],

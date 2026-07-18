@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Table: people
-CREATE TABLE public.people (
+CREATE TABLE IF NOT EXISTS public.people (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE public.people (
 );
 
 -- Table: person_fields
-CREATE TABLE public.person_fields (
+CREATE TABLE IF NOT EXISTS public.person_fields (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     person_id UUID NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
@@ -36,7 +36,7 @@ CREATE TABLE public.person_fields (
 );
 
 -- Table: interactions
-CREATE TABLE public.interactions (
+CREATE TABLE IF NOT EXISTS public.interactions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     person_id UUID NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
@@ -47,7 +47,7 @@ CREATE TABLE public.interactions (
 );
 
 -- Table: promises
-CREATE TABLE public.promises (
+CREATE TABLE IF NOT EXISTS public.promises (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     person_id UUID NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
@@ -58,7 +58,7 @@ CREATE TABLE public.promises (
 );
 
 -- Table: notes
-CREATE TABLE public.notes (
+CREATE TABLE IF NOT EXISTS public.notes (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     person_id UUID NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
@@ -67,7 +67,7 @@ CREATE TABLE public.notes (
 );
 
 -- Table: reminders
-CREATE TABLE public.reminders (
+CREATE TABLE IF NOT EXISTS public.reminders (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     person_id UUID NOT NULL REFERENCES public.people(id) ON DELETE CASCADE,
