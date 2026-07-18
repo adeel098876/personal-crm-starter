@@ -49,26 +49,10 @@ async function callAiJson(
   messages: Array<{ role: string; content: string }>,
   schema: unknown,
 ): Promise<string> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("AI not configured (missing OPENAI_API_KEY).");
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "response", strict: true, schema },
-      },
-    }),
-  });
-  if (res.status === 429) throw new Error("AI rate limit — try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits exhausted. Add credits to continue.");
-  if (!res.ok) throw new Error(`AI error (${res.status})`);
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return data.choices?.[0]?.message?.content ?? "";
+  // Skipping AI integration for now as requested.
+  return JSON.stringify({ predictions: [] });
 }
+
 
 async function predictBatch(
   contacts: Array<z.infer<typeof ContactInput>>,

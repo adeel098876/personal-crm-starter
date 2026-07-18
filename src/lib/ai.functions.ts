@@ -8,34 +8,24 @@ async function callAI(
   messages: Array<{ role: string; content: string }>,
   jsonSchema?: unknown,
 ) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("AI is not configured (missing OPENAI_API_KEY).");
-
-  const body: Record<string, unknown> = { model: MODEL, messages };
+  // Skipping AI integration for now as requested.
+  // We return a mock response based on whether a schema is provided.
   if (jsonSchema) {
-    body.response_format = {
-      type: "json_schema",
-      json_schema: { name: "response", strict: true, schema: jsonSchema },
-    };
+    if ((jsonSchema as any).properties?.nudges) {
+      return JSON.stringify({ nudges: [] });
+    }
+    if ((jsonSchema as any).properties?.ids) {
+      return JSON.stringify({ ids: [], reason: "AI search is currently disabled." });
+    }
+    if ((jsonSchema as any).properties?.summary) {
+      return JSON.stringify({ summary: "AI summary disabled.", actions: [], follow_ups: [] });
+    }
+    return "{}";
   }
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-    body: JSON.stringify(body),
-  });
-
-  if (res.status === 429) throw new Error("AI rate limit — try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits exhausted. Add credits to continue.");
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`AI error (${res.status}): ${text.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  return data.choices?.[0]?.message?.content ?? "";
+  return "AI integration is currently disabled.";
 }
+
+
 
 export const smartSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
