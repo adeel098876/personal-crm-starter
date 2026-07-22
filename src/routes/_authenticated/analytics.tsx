@@ -20,20 +20,22 @@ function AnalyticsPage() {
   const fetch = useServerFn(getAnalytics);
   const q = useQuery({ queryKey: ["analytics"], queryFn: () => fetch() });
 
-  if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (q.isLoading) return <p className="text-sm text-muted-foreground animate-pulse">Loading analytics…</p>;
   const d = q.data;
   if (!d) return null;
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <header>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
           Signal
         </p>
-        <h1 className="text-3xl font-bold tracking-tight mt-1">Analytics</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
+          Analytics
+        </h1>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Total people" value={d.totalPeople} />
         <Stat label="Contacted / 30d" value={d.contactedThisMonth} />
         <Stat label="Interactions / 90d" value={d.totalInteractions90} />
@@ -47,11 +49,11 @@ function AnalyticsPage() {
         />
       </div>
 
-      <section className="bg-surface border border-border rounded-xl p-5">
-        <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+      <section className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
           Cadence — last 12 weeks
         </h2>
-        <div className="h-64">
+        <div className="h-64 pt-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={d.weeks}>
               <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" />
@@ -59,23 +61,26 @@ function AnalyticsPage() {
               <YAxis tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "var(--color-surface)",
+                  backgroundColor: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: 6,
+                  borderRadius: 16,
+                  color: "var(--color-popover-foreground)",
                   fontSize: 12,
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.2)",
                 }}
               />
-              <Bar dataKey="count" fill="var(--color-accent)" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="count" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </section>
 
-      <section>
-        <h2 className="text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+      <section className="space-y-3">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
           Longest ignored
         </h2>
-        <div className="bg-surface border border-border rounded-lg divide-y divide-border">
+        <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-border shadow-xl">
           {d.longestIgnored.length === 0 && (
             <p className="p-6 text-center text-sm text-muted-foreground">
               Not enough interaction data yet.
@@ -86,10 +91,10 @@ function AnalyticsPage() {
               key={r.person.id}
               to="/people/$id"
               params={{ id: r.person.id }}
-              className="p-4 flex items-center justify-between hover:bg-background/50 transition-colors"
+              className="p-4.5 flex items-center justify-between hover:bg-surface-2 transition-all duration-200 group"
             >
-              <span className="text-sm font-medium">{r.person.name}</span>
-              <span className="text-xs font-mono text-orange-400/80">{r.days}d ago</span>
+              <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{r.person.name}</span>
+              <span className="text-xs font-mono text-amber-500 font-medium bg-amber-500/10 px-2.5 py-1 rounded-full">{r.days}d ago</span>
             </Link>
           ))}
         </div>
@@ -100,11 +105,11 @@ function AnalyticsPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-surface border border-border rounded-lg p-4">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+    <div className="glass-panel glass-panel-hover rounded-3xl p-5 shadow-lg">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className="text-2xl font-bold tracking-tight mt-1">{value}</p>
+      <p className="text-2xl font-extrabold tracking-tight mt-1.5 text-foreground">{value}</p>
     </div>
   );
 }
