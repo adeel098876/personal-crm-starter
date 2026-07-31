@@ -10,6 +10,7 @@ import {
 } from "@/lib/people.functions";
 import { logInteraction } from "@/lib/interactions.functions";
 import { createPromise, resolvePromise } from "@/lib/reminders.functions";
+import { meetingPrep, summarizeNotes } from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -81,11 +82,47 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const removeF = useServerFn(deleteField);
   const addProm = useServerFn(createPromise);
   const resolveProm = useServerFn(resolvePromise);
+  const fetchBrief = useServerFn(meetingPrep);
+  const fetchSummary = useServerFn(summarizeNotes);
 
   const q = useQuery({
     queryKey: ["person", id],
     queryFn: () => fetchPerson({ data: { id } }),
   });
+
+  /* AI States */
+  const [brief, setBrief] = useState<string | null>(null);
+  const [briefBusy, setBriefBusy] = useState(false);
+  const [rawNotesText, setRawNotesText] = useState("");
+  const [summaryResult, setSummaryResult] = useState<any>(null);
+  const [summaryBusy, setSummaryBusy] = useState(false);
+
+  async function generateBrief() {
+    setBriefBusy(true);
+    try {
+      const res = await fetchBrief({ data: { person_id: id } });
+      setBrief(res.brief);
+      toast.success("AI brief generated ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Brief generation failed");
+    } finally {
+      setBriefBusy(false);
+    }
+  }
+
+  async function runSummarize() {
+    if (!rawNotesText.trim()) return;
+    setSummaryBusy(true);
+    try {
+      const res = await fetchSummary({ data: { text: rawNotesText } });
+      setSummaryResult(res);
+      toast.success("Notes summarized ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Summarization failed");
+    } finally {
+      setSummaryBusy(false);
+    }
+  }
 
   /* Mutations */
   const logMut = useMutation({
@@ -190,7 +227,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
         onClick={close}
       />
 
-      {/* Slide-over panel (Fixed viewport-pinned position) */}
+      {/* Slide-over panel */}
       <div
         className="fixed inset-y-0 right-0 z-50 w-full max-w-lg flex flex-col shadow-2xl transition-transform duration-300 ease-out"
         style={{
@@ -283,6 +320,32 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                 {/* ── Tab: Overview ── */}
                 {activeTab === "overview" && (
                   <div className="space-y-5">
+                    {/* Groq AI Meeting Prep Brief */}
+                    <div className="glass-panel bg-primary/[0.03] border border-primary/20 rounded-2xl p-4 shadow-md space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="size-2 rounded-full bg-primary animate-pulse" />
+                          <h3 className="text-[9px] font-bold uppercase tracking-widest text-primary">Groq AI Meeting Brief</h3>
+                        </div>
+                        <button
+                          onClick={generateBrief}
+                          disabled={briefBusy}
+                          className="text-[9px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {briefBusy ? <><Spinner /> Generating…</> : brief ? "Regenerate →" : "Generate Brief →"}
+                        </button>
+                      </div>
+                      {brief ? (
+                        <div className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap font-medium border-t border-border/50 pt-2.5">
+                          {brief}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Generate an instant AI meeting brief analyzing timeline, notes, and open promises.
+                        </p>
+                      )}
+                    </div>
+
                     {/* Log interaction */}
                     <div>
                       <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Log Interaction</h3>
@@ -437,6 +500,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                 {/* ── Tab: Notes ── */}
                 {activeTab === "notes" && (
                   <div className="space-y-4">
+                    {/* Notes Input */}
                     <div className="glass-panel rounded-2xl p-4 space-y-3 shadow-md">
                       <textarea
                         rows={3}
@@ -455,6 +519,49 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                         </button>
                       </div>
                     </div>
+
+                    {/* Groq AI Notes Summarizer */}
+                    <div className="glass-panel border border-primary/20 bg-primary/[0.02] rounded-2xl p-4 space-y-3 shadow-md">
+                      <h3 className="text-[9px] font-bold uppercase tracking-widest text-primary">Summarize Raw Notes with Groq AI</h3>
+                      <textarea
+                        rows={3}
+                        placeholder="Paste raw unstructured meeting notes here to extract summary & action items…"
+                        value={rawNotesText}
+                        onChange={(e) => setRawNotesText(e.target.value)}
+                        className="w-full glass-input rounded-xl p-3 text-xs font-mono text-foreground focus:outline-none resize-none"
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          disabled={summaryBusy || !rawNotesText.trim()}
+                          onClick={runSummarize}
+                          className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {summaryBusy ? <><Spinner /> Summarizing…</> : "Summarize with AI"}
+                        </button>
+                      </div>
+                      {summaryResult && (
+                        <div className="mt-3 space-y-3 text-xs border-t border-border/60 pt-3">
+                          <div>
+                            <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">AI Summary</p>
+                            <p className="text-foreground mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
+                          </div>
+                          {summaryResult.actions?.length > 0 && (
+                            <div>
+                              <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">Action Items</p>
+                              <ul className="list-disc pl-4 mt-1 space-y-1 text-foreground/90">
+                                {summaryResult.actions.map((a: any, idx: number) => (
+                                  <li key={idx}>
+                                    <span className="text-primary font-bold">{a.owner}:</span> {a.description}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Saved Notes List */}
                     <div className="space-y-3">
                       {normalizedNotes.map((n: any) => (
                         <div key={n.id} className="glass-panel rounded-2xl p-4 relative shadow-md">
@@ -471,7 +578,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                           <p className="text-[9px] font-semibold text-muted-foreground mt-2.5">{formatAgo(n.created_at)}</p>
                         </div>
                       ))}
-                      {normalizedNotes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No notes yet.</p>}
+                      {normalizedNotes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No saved notes yet.</p>}
                     </div>
                   </div>
                 )}

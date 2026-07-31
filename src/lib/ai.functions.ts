@@ -2,30 +2,71 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const MODEL = "gpt-4o-mini";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 async function callAI(
   messages: Array<{ role: string; content: string }>,
   jsonSchema?: unknown,
 ) {
-  // Skipping AI integration for now as requested.
-  // We return a mock response based on whether a schema is provided.
-  if (jsonSchema) {
-    if ((jsonSchema as any).properties?.nudges) {
-      return JSON.stringify({ nudges: [] });
-    }
-    if ((jsonSchema as any).properties?.ids) {
-      return JSON.stringify({ ids: [], reason: "AI search is currently disabled." });
-    }
-    if ((jsonSchema as any).properties?.summary) {
-      return JSON.stringify({ summary: "AI summary disabled.", actions: [], follow_ups: [] });
-    }
-    return "{}";
+  const apiKey =
+    process.env.GROQ_API_KEY ||
+    process.env.VITE_GROQ_API_KEY ||
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GROQ_API_KEY);
+
+  if (!apiKey || apiKey.trim() === "" || apiKey === "your-groq-api-key-here") {
+    throw new Error(
+      "GROQ_API_KEY is not set. Please set your GROQ_API_KEY in your .env file.",
+    );
   }
-  return "AI integration is currently disabled.";
+
+  const payloadMessages = messages.map((m) => ({ ...m }));
+
+  if (jsonSchema && payloadMessages[0]?.role === "system") {
+    payloadMessages[0].content +=
+      "\nIMPORTANT: You MUST respond with valid raw JSON only. Do not wrap in markdown code blocks or add introductory text.";
+  }
+
+  const body: any = {
+    model: GROQ_MODEL,
+    messages: payloadMessages,
+    temperature: 0.2,
+    max_tokens: 1500,
+  };
+
+  if (jsonSchema) {
+    body.response_format = { type: "json_object" };
+  }
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Groq API Error (${res.status}): ${errorText}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content ?? "";
+  
+  // Clean markdown code blocks if model returned them despite system prompt
+  let cleaned = content.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.slice(7);
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.slice(3);
+  }
+  if (cleaned.endsWith("```")) {
+    cleaned = cleaned.slice(0, -3);
+  }
+
+  return cleaned.trim();
 }
-
-
 
 export const smartSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -59,7 +100,7 @@ export const smartSearch = createServerFn({ method: "POST" })
         {
           role: "system",
           content:
-            "You match contacts against a natural-language query. Return the ids of matching people, strongest match first. Consider name, company, role, location, tags, bio, and custom fields (family, pets, favorites, interests, allergies). Be generous with fuzzy matches but never invent people.",
+            "You match contacts against a natural-language query. Return the ids of matching people, strongest match first. Consider name, company, role, location, tags, bio, and custom fields. Be generous with fuzzy matches but never invent people.",
         },
         {
           role: "user",
@@ -68,7 +109,6 @@ export const smartSearch = createServerFn({ method: "POST" })
       ],
       {
         type: "object",
-        additionalProperties: false,
         properties: {
           ids: { type: "array", items: { type: "string" } },
           reason: { type: "string" },
@@ -81,7 +121,10 @@ export const smartSearch = createServerFn({ method: "POST" })
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // ignore
+      // Fallback keyword filter if JSON parsing fails
+      const qLower = data.query.toLowerCase();
+      const matched = people.filter((p) => p.name.toLowerCase().includes(qLower));
+      return { people: matched, reason: `Keyword match for "${data.query}"` };
     }
     const idSet = new Set(parsed.ids);
     const matched = people.filter((p) => idSet.has(p.id));
@@ -101,7 +144,7 @@ export const meetingPrep = createServerFn({ method: "POST" })
       .eq("id", data.person_id)
       .eq("user_id", userId)
       .maybeSingle();
-    if (!person) throw new Error("Not found");
+    if (!person) throw new Error("Contact not found");
 
     const [ints, nts, flds, prms] = await Promise.all([
       supabase
@@ -127,7 +170,7 @@ export const meetingPrep = createServerFn({ method: "POST" })
       },
       {
         role: "user",
-        content: `Prepare a brief for my upcoming meeting.\n\nPerson: ${JSON.stringify(person)}\nRecent interactions: ${JSON.stringify(ints.data ?? [])}\nNotes: ${JSON.stringify(nts.data ?? [])}\nStructured fields: ${JSON.stringify(flds.data ?? [])}\nOpen promises: ${JSON.stringify(prms.data ?? [])}`,
+        content: `Prepare a brief for my upcoming meeting with ${person.name}.\n\nPerson: ${JSON.stringify(person)}\nRecent interactions: ${JSON.stringify(ints.data ?? [])}\nNotes: ${JSON.stringify(nts.data ?? [])}\nStructured fields: ${JSON.stringify(flds.data ?? [])}\nOpen promises: ${JSON.stringify(prms.data ?? [])}`,
       },
     ]);
     return { brief };
@@ -150,14 +193,12 @@ export const summarizeNotes = createServerFn({ method: "POST" })
       ],
       {
         type: "object",
-        additionalProperties: false,
         properties: {
           summary: { type: "string" },
           actions: {
             type: "array",
             items: {
               type: "object",
-              additionalProperties: false,
               properties: {
                 owner: { type: "string" },
                 description: { type: "string" },
@@ -169,7 +210,6 @@ export const summarizeNotes = createServerFn({ method: "POST" })
             type: "array",
             items: {
               type: "object",
-              additionalProperties: false,
               properties: {
                 title: { type: "string" },
                 when: { type: "string" },
@@ -251,13 +291,11 @@ export const dailyNudges = createServerFn({ method: "POST" })
       ],
       {
         type: "object",
-        additionalProperties: false,
         properties: {
           nudges: {
             type: "array",
             items: {
               type: "object",
-              additionalProperties: false,
               properties: {
                 person_id: { type: "string" },
                 headline: { type: "string" },
