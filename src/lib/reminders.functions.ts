@@ -80,9 +80,17 @@ export const createPromise = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    const payload: any = {
+      person_id: data.person_id,
+      description: data.description,
+      user_id: context.userId,
+      status: "open",
+    };
+    if (data.due_at) payload.due_at = data.due_at;
+
     const { data: created, error } = await context.supabase
       .from("promises")
-      .insert({ ...data, user_id: context.userId })
+      .insert(payload)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -97,11 +105,21 @@ export const resolvePromise = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    // Try updating with completed_at first
+    let res = await context.supabase
       .from("promises")
       .update({ status: data.status, completed_at: new Date().toISOString() })
       .eq("id", data.id)
       .eq("user_id", context.userId);
-    if (error) throw new Error(error.message);
+
+    if (res.error) {
+      // Fallback if completed_at column does not exist
+      res = await context.supabase
+        .from("promises")
+        .update({ status: data.status })
+        .eq("id", data.id)
+        .eq("user_id", context.userId);
+    }
+    if (res.error) throw new Error(res.error.message);
     return { ok: true };
   });

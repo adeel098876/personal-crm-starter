@@ -16,12 +16,40 @@ export const logInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => InteractionInput.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: created, error } = await context.supabase
+    const payload: any = {
+      person_id: data.person_id,
+      type: data.type,
+      summary: data.summary || null,
+      occurred_at: data.occurred_at || new Date().toISOString(),
+      user_id: context.userId,
+    };
+    if (data.channel) payload.channel = data.channel;
+    if (data.mood) payload.mood = data.mood;
+    if (data.location) payload.location = data.location;
+
+    let { data: created, error } = await context.supabase
       .from("interactions")
-      .insert({ ...data, user_id: context.userId })
+      .insert(payload)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+
+    if (error) {
+      // Fallback for minimal column schema
+      const fallbackPayload = {
+        person_id: data.person_id,
+        type: data.type,
+        summary: data.summary || null,
+        occurred_at: data.occurred_at || new Date().toISOString(),
+        user_id: context.userId,
+      };
+      const res = await context.supabase
+        .from("interactions")
+        .insert(fallbackPayload)
+        .select()
+        .single();
+      if (res.error) throw new Error(res.error.message);
+      created = res.data;
+    }
     return { interaction: created };
   });
 

@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPerson, listPeople } from "@/lib/people.functions";
+import { PersonPanel } from "@/components/person-panel";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -12,14 +13,15 @@ export const Route = createFileRoute("/_authenticated/people")({
 
 function PeoplePage() {
   const qc = useQueryClient();
-  const fetch = useServerFn(listPeople);
+  const fetchList = useServerFn(listPeople);
   const add = useServerFn(createPerson);
   const [search, setSearch] = useState("");
   const [openCreate, setOpenCreate] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const people = useQuery({
     queryKey: ["people", search],
-    queryFn: () => fetch({ data: { search: search || undefined } }),
+    queryFn: () => fetchList({ data: { search: search || undefined } }),
   });
 
   const createMut = useMutation({
@@ -29,7 +31,7 @@ function PeoplePage() {
       target_cadence_days: number;
     }) => add({ data: input as any }),
     onSuccess: () => {
-      toast.success("Person added");
+      toast.success("Person added ✓");
       setOpenCreate(false);
       qc.invalidateQueries({ queryKey: ["people"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -75,15 +77,13 @@ function PeoplePage() {
             </thead>
             <tbody className="divide-y divide-border">
               {people.data?.people.map((p: any) => (
-                <tr key={p.id} className="hover:bg-surface-2 transition-colors">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedId(p.id)}
+                  className="hover:bg-surface-2 transition-colors cursor-pointer group"
+                >
                   <td className="px-5 py-3.5 font-medium text-foreground">
-                    <Link
-                      to="/people/$id"
-                      params={{ id: p.id }}
-                      className="hover:text-primary transition-colors"
-                    >
-                      {p.name}
-                    </Link>
+                    <span className="group-hover:text-primary transition-colors">{p.name}</span>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-muted-foreground capitalize">
                     {p.relationship_type}
@@ -101,10 +101,7 @@ function PeoplePage() {
               ))}
               {people.data && people.data.people.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-5 py-12 text-center text-sm text-muted-foreground"
-                  >
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
                     No people yet. Add your first contact above.
                   </td>
                 </tr>
@@ -113,6 +110,11 @@ function PeoplePage() {
           </table>
         </div>
       </div>
+
+      {/* Slide-over panel pinned to viewport */}
+      {selectedId && (
+        <PersonPanel id={selectedId} onClose={() => setSelectedId(null)} />
+      )}
 
       {openCreate && (
         <CreatePersonDialog
@@ -171,21 +173,10 @@ function CreatePersonDialog({
               className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none capitalize"
             >
               {[
-                "family",
-                "friend",
-                "partner",
-                "coworker",
-                "manager",
-                "client",
-                "mentor",
-                "mentee",
-                "investor",
-                "acquaintance",
-                "other",
+                "family", "friend", "partner", "coworker", "manager",
+                "client", "mentor", "mentee", "investor", "acquaintance", "other",
               ].map((t) => (
-                <option key={t} value={t} className="bg-popover text-popover-foreground">
-                  {t}
-                </option>
+                <option key={t} value={t} className="bg-popover text-popover-foreground">{t}</option>
               ))}
             </select>
           </div>
