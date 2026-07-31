@@ -73,7 +73,7 @@ function PersonPage() {
   const [summaryResult, setSummaryResult] = useState<any>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
 
-  if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (q.isLoading) return <p className="text-sm text-muted-foreground animate-pulse">Loading contact details…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
   if (!q.data) return null;
 
@@ -109,14 +109,14 @@ function PersonPage() {
       <div className="col-span-12 lg:col-span-8 space-y-8">
         <header className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-4.5">
-            <div className="size-16 rounded-3xl bg-white/[0.04] border border-white/10 grid place-items-center text-xl font-bold text-white shadow-inner">
+            <div className="size-16 rounded-3xl bg-surface-2 border border-border grid place-items-center text-xl font-bold text-foreground shadow-md">
               {initials(person.name)}
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
                 {person.relationship_type}
               </p>
-              <h1 className="text-3xl font-extrabold tracking-tight text-white mt-0.5">{person.name}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground mt-0.5">{person.name}</h1>
               <p className="text-xs text-muted-foreground mt-1 font-medium">
                 {[person.role, person.company].filter(Boolean).join(" · ") || "—"}
                 {person.location && ` · ${person.location}`}
@@ -145,7 +145,6 @@ function PersonPage() {
 
         {/* Meeting prep */}
         <section className="glass-panel bg-primary/[0.02] border-primary/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] rounded-full pointer-events-none" />
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
               Meeting prep
@@ -153,34 +152,34 @@ function PersonPage() {
             <button
               onClick={runBrief}
               disabled={briefBusy}
-              className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-white transition-colors disabled:opacity-30"
+              className="text-[10px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-colors disabled:opacity-30"
             >
               {briefBusy ? "Thinking…" : brief ? "Regenerate →" : "Generate →"}
             </button>
           </div>
           {brief ? (
-            <div className="text-sm leading-relaxed text-white/90 whitespace-pre-wrap">{brief}</div>
+            <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{brief}</div>
           ) : (
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Generate an AI brief combining profile, timeline, notes, and open promises. (Note: AI is currently stubbed).
+              Generate an AI brief combining profile, timeline, notes, and open promises.
             </p>
           )}
         </section>
 
         {/* Log interaction */}
         <section className="space-y-3.5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Log interaction
           </h2>
-          <div className="glass-panel rounded-3xl p-5">
+          <div className="glass-panel rounded-3xl p-5 shadow-lg">
             <div className="flex gap-2.5 flex-col sm:flex-row">
               <select
                 value={intType}
                 onChange={(e) => setIntType(e.target.value as any)}
-                className="bg-[#1c1c1e] text-white border border-white/5 rounded-2xl px-4.5 py-3 text-xs capitalize focus:outline-none focus:border-primary/50"
+                className="glass-input rounded-2xl px-4.5 py-3 text-xs capitalize focus:outline-none"
               >
                 {INTERACTION_TYPES.map((t) => (
-                  <option key={t} value={t} className="bg-[#1c1c1e] text-white">
+                  <option key={t} value={t} className="bg-popover text-popover-foreground">
                     {t}
                   </option>
                 ))}
@@ -189,7 +188,7 @@ function PersonPage() {
                 placeholder="Summary (e.g. discussed Berlin move)"
                 value={intSummary}
                 onChange={(e) => setIntSummary(e.target.value)}
-                className="flex-1 glass-input rounded-2xl px-4 py-3 text-xs text-white focus:outline-none"
+                className="flex-1 glass-input rounded-2xl px-4 py-3 text-xs text-foreground focus:outline-none"
               />
               <button
                 onClick={async () => {
@@ -200,7 +199,7 @@ function PersonPage() {
                   setIntSummary("");
                   invalidate();
                 }}
-                className="bg-[#F2F2F7] hover:bg-white text-black px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md"
               >
                 Log
               </button>
@@ -210,7 +209,7 @@ function PersonPage() {
 
         {/* Timeline */}
         <section className="space-y-4">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Timeline
           </h2>
           {interactions.length === 0 ? (
@@ -218,17 +217,17 @@ function PersonPage() {
               <p className="text-sm text-muted-foreground">No interactions logged yet.</p>
             </div>
           ) : (
-            <div className="border-l border-white/5 ml-3 pl-6 space-y-6 relative py-1">
+            <div className="border-l border-border ml-3 pl-6 space-y-6 relative py-1">
               {interactions.map((i) => (
                 <div key={i.id} className="relative">
-                  <div className="absolute -left-[31px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-[#050508]" />
+                  <div className="absolute -left-[31px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-background" />
                   <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
                     <span className="text-primary">{i.type}</span>
-                    <span className="text-muted-foreground/70 font-medium">
+                    <span className="text-muted-foreground font-medium">
                       {formatDistanceToNow(new Date(i.occurred_at), { addSuffix: true })}
                     </span>
                   </div>
-                  {i.summary && <p className="text-sm mt-1.5 leading-relaxed text-white font-medium">{i.summary}</p>}
+                  {i.summary && <p className="text-sm mt-1.5 leading-relaxed text-foreground font-medium">{i.summary}</p>}
                 </div>
               ))}
             </div>
@@ -237,7 +236,7 @@ function PersonPage() {
 
         {/* Auto-summarize notes */}
         <section className="glass-panel rounded-3xl p-5 space-y-4 shadow-xl">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Summarize raw notes with AI
           </h2>
           <textarea
@@ -245,31 +244,31 @@ function PersonPage() {
             placeholder="Paste raw meeting notes…"
             value={rawNotes}
             onChange={(e) => setRawNotes(e.target.value)}
-            className="w-full glass-input rounded-2xl p-4 text-xs font-mono text-white focus:outline-none"
+            className="w-full glass-input rounded-2xl p-4 text-xs font-mono text-foreground focus:outline-none"
           />
           <div className="flex justify-end">
             <button
               onClick={runSummarize}
               disabled={summaryBusy}
-              className="px-5 py-2.5 bg-[#F2F2F7] hover:bg-white text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-50"
+              className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-50"
             >
               {summaryBusy ? "Summarizing…" : "Summarize"}
             </button>
           </div>
           {summaryResult && (
-            <div className="mt-4 space-y-4 text-sm border-t border-white/5 pt-4">
+            <div className="mt-4 space-y-4 text-sm border-t border-border pt-4">
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                   Summary
                 </p>
-                <p className="text-white mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
+                <p className="text-foreground mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
               </div>
               {summaryResult.actions?.length > 0 && (
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                     Actions
                   </p>
-                  <ul className="list-disc pl-5 mt-1.5 space-y-1.5 text-white/90">
+                  <ul className="list-disc pl-5 mt-1.5 space-y-1.5 text-foreground/90">
                     {summaryResult.actions.map((a: any, i: number) => (
                       <li key={i} className="text-xs">
                         <span className="text-primary font-bold">{a.owner}:</span> {a.description}
@@ -286,16 +285,16 @@ function PersonPage() {
       <aside className="col-span-12 lg:col-span-4 space-y-8">
         {/* Notes */}
         <section className="space-y-3.5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Notes
           </h2>
-          <div className="glass-panel rounded-3xl p-5 space-y-3">
+          <div className="glass-panel rounded-3xl p-5 space-y-3 shadow-lg">
             <textarea
               rows={3}
               placeholder="Add a note…"
               value={noteBody}
               onChange={(e) => setNoteBody(e.target.value)}
-              className="w-full glass-input rounded-2xl p-3 text-xs text-white focus:outline-none"
+              className="w-full glass-input rounded-2xl p-3 text-xs text-foreground focus:outline-none"
             />
             <div className="flex justify-end">
               <button
@@ -305,7 +304,7 @@ function PersonPage() {
                   setNoteBody("");
                   invalidate();
                 }}
-                className="px-4 py-2 bg-[#F2F2F7] hover:bg-white text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md"
               >
                 Save note
               </button>
@@ -313,20 +312,20 @@ function PersonPage() {
           </div>
           <div className="space-y-3">
             {notes.map((n) => (
-              <div key={n.id} className="glass-panel rounded-3xl p-4.5 text-sm relative group">
+              <div key={n.id} className="glass-panel rounded-3xl p-4.5 text-sm relative group shadow-md">
                 <div className="flex justify-between items-start gap-2">
-                  <p className="whitespace-pre-wrap flex-1 text-white font-medium text-xs leading-relaxed">{n.body}</p>
+                  <p className="whitespace-pre-wrap flex-1 text-foreground font-medium text-xs leading-relaxed">{n.body}</p>
                   <button
                     onClick={async () => {
                       await removeN({ data: { id: n.id } });
                       invalidate();
                     }}
-                    className="size-6 rounded-full bg-white/[0.04] border border-white/5 items-center justify-center text-muted-foreground hover:text-destructive flex transition-colors text-xs"
+                    className="size-6 rounded-full bg-surface-2 border border-border items-center justify-center text-muted-foreground hover:text-destructive flex transition-colors text-xs"
                   >
                     ×
                   </button>
                 </div>
-                <p className="text-[9px] font-semibold tracking-wide text-muted-foreground/80 mt-3.5">
+                <p className="text-[9px] font-semibold tracking-wide text-muted-foreground mt-3.5">
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                 </p>
               </div>
@@ -336,18 +335,18 @@ function PersonPage() {
 
         {/* Structured fields */}
         <section className="space-y-3.5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Details
           </h2>
-          <div className="glass-panel rounded-3xl p-5 space-y-4">
+          <div className="glass-panel rounded-3xl p-5 space-y-4 shadow-lg">
             <div className="grid grid-cols-1 gap-2.5">
               <select
                 value={fieldCategory}
                 onChange={(e) => setFieldCategory(e.target.value)}
-                className="bg-[#1c1c1e] text-white border border-white/5 rounded-2xl px-4 py-2.5 text-xs capitalize focus:outline-none"
+                className="glass-input rounded-2xl px-4 py-2.5 text-xs capitalize focus:outline-none"
               >
                 {["family", "pet", "favorite", "allergy", "interest", "custom"].map((c) => (
-                  <option key={c} value={c} className="bg-[#1c1c1e] text-white">
+                  <option key={c} value={c} className="bg-popover text-popover-foreground">
                     {c}
                   </option>
                 ))}
@@ -356,13 +355,13 @@ function PersonPage() {
                 placeholder="Key (e.g. Spouse name)"
                 value={fieldKey}
                 onChange={(e) => setFieldKey(e.target.value)}
-                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
               />
               <input
                 placeholder="Value"
                 value={fieldValue}
                 onChange={(e) => setFieldValue(e.target.value)}
-                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                className="glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
               />
             </div>
             <button
@@ -380,21 +379,21 @@ function PersonPage() {
                 setFieldValue("");
                 invalidate();
               }}
-              className="w-full text-[10px] font-bold uppercase tracking-wider border border-white/10 hover:bg-white/[0.04] rounded-full py-2 text-white transition-all active:scale-95"
+              className="w-full text-[10px] font-bold uppercase tracking-wider border border-border hover:bg-surface-2 rounded-full py-2 text-foreground transition-all active:scale-95"
             >
               + Add field
             </button>
-            <div className="mt-4 divide-y divide-white/5">
+            <div className="mt-4 divide-y divide-border">
               {fields.map((f) => (
                 <div
                   key={f.id}
-                  className="flex justify-between items-baseline py-3 text-xs hover:bg-white/[0.01] transition-colors rounded px-1"
+                  className="flex justify-between items-baseline py-3 text-xs hover:bg-surface-2 transition-colors rounded px-1"
                 >
                   <div className="min-w-0">
                     <span className="text-[8px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded-md mr-2">
                       {f.category}
                     </span>
-                    <span className="font-semibold text-white">{f.key}</span>
+                    <span className="font-semibold text-foreground">{f.key}</span>
                     {f.value && <span className="text-muted-foreground ml-2 font-medium">{f.value}</span>}
                   </div>
                   <button
@@ -414,16 +413,16 @@ function PersonPage() {
 
         {/* Promises */}
         <section className="space-y-3.5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
             Promises
           </h2>
-          <div className="glass-panel rounded-3xl p-5 space-y-4">
+          <div className="glass-panel rounded-3xl p-5 space-y-4 shadow-lg">
             <div className="flex gap-2">
               <input
                 placeholder="I promised to…"
                 value={promiseText}
                 onChange={(e) => setPromiseText(e.target.value)}
-                className="flex-1 glass-input rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                className="flex-1 glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
               />
               <button
                 onClick={async () => {
@@ -432,16 +431,16 @@ function PersonPage() {
                   setPromiseText("");
                   invalidate();
                 }}
-                className="text-[10px] font-bold uppercase tracking-wider border border-white/10 hover:bg-white/[0.04] rounded-full px-4.5 text-white transition-all active:scale-95"
+                className="text-[10px] font-bold uppercase tracking-wider border border-border hover:bg-surface-2 rounded-full px-4.5 text-foreground transition-all active:scale-95"
               >
                 Add
               </button>
             </div>
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border">
               {promises.map((p) => (
                 <div key={p.id} className="py-2.5 flex items-center justify-between gap-2">
                   <span
-                    className={`text-xs font-medium ${p.status !== "open" ? "line-through text-muted-foreground/50" : "text-white"}`}
+                    className={`text-xs font-medium ${p.status !== "open" ? "line-through text-muted-foreground/50" : "text-foreground"}`}
                   >
                     {p.description}
                   </span>
@@ -451,7 +450,7 @@ function PersonPage() {
                         await resolveProm({ data: { id: p.id, status: "kept" } });
                         invalidate();
                       }}
-                      className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1 hover:bg-primary hover:text-white transition-all active:scale-95"
+                      className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1 hover:bg-primary hover:text-primary-foreground transition-all active:scale-95"
                     >
                       Kept
                     </button>
@@ -488,7 +487,7 @@ function StatBlock({ label, children }: { label: string; children: React.ReactNo
       <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-sm font-bold text-white leading-tight">{children}</p>
+      <p className="mt-1 text-sm font-bold text-foreground leading-tight">{children}</p>
     </div>
   );
 }
@@ -496,4 +495,4 @@ function StatBlock({ label, children }: { label: string; children: React.ReactNo
 function initials(name: string) {
   const parts = name.split(" ").filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
-}
+}

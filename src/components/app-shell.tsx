@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
 import { useTheme, type Theme } from "@/components/theme-provider";
+import { Background3D } from "@/components/background-3d";
 
 const NAV = [
   { to: "/today", label: "Today", key: "1", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -16,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [initials, setInitials] = useState("··");
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -43,23 +44,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative font-sans transition-colors duration-400">
-      {/* Antigravity Fluid Quantum Canvas Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        {resolvedTheme === "dark" ? (
-          <>
-            <div className="absolute top-[-15%] left-[-10%] w-[65vw] h-[65vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-tr from-blue-600/20 via-indigo-600/15 to-cyan-500/10 blur-[130px] animate-fluid-1" />
-            <div className="absolute bottom-[-15%] right-[-10%] w-[70vw] h-[70vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-purple-600/20 via-pink-600/15 to-blue-600/10 blur-[140px] animate-fluid-2" />
-            <div className="absolute top-[30%] right-[15%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] rounded-full bg-gradient-to-r from-teal-500/15 via-emerald-600/10 to-blue-500/15 blur-[120px] animate-fluid-3" />
-          </>
-        ) : (
-          <>
-            <div className="absolute top-[-10%] left-[-10%] w-[65vw] h-[65vw] max-w-[700px] max-h-[700px] rounded-full bg-gradient-to-tr from-blue-400/25 via-indigo-300/20 to-teal-200/20 blur-[120px] animate-fluid-1" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-purple-300/25 via-pink-200/20 to-sky-300/25 blur-[130px] animate-fluid-2" />
-            <div className="absolute top-[30%] right-[15%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] rounded-full bg-gradient-to-r from-cyan-200/20 via-teal-300/20 to-indigo-200/20 blur-[110px] animate-fluid-3" />
-          </>
-        )}
-      </div>
+    <div className="min-h-screen bg-background text-foreground relative font-sans transition-colors duration-300">
+      {/* 60FPS Hardware-Accelerated 3D Interactive Spatial Background */}
+      <Background3D />
 
       {/* Desktop Sticky Header */}
       <nav className="sticky top-0 z-40 bg-surface backdrop-blur-xl border-b border-border transition-all duration-300">

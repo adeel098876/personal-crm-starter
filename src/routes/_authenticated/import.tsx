@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import { parseVCards, type ParsedContact } from "@/lib/vcard-parser";
 import { csvToContacts } from "@/lib/csv-parser";
 import {
-  commitReview,
   listImports,
   previewAndImport,
-  type ContactPrediction,
 } from "@/lib/import.functions";
 import { format } from "date-fns";
 
@@ -84,12 +82,12 @@ function ImportPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <header>
         <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
           Ingest
         </p>
-        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-white to-[#AEAEB2]">Import contacts</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">Import contacts</h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
           Bring in contacts from Google, Apple, or any address book. Contacts are imported immediately with default relationships. You can refine them anytime.
         </p>
@@ -109,8 +107,8 @@ function ImportPage() {
             }}
             className={`px-4 py-2 rounded-full border transition-all ${
               source === t.key
-                ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-white/5 bg-white/[0.02] text-muted-foreground hover:text-white"
+                ? "border-primary/40 bg-primary/10 text-primary font-bold shadow-sm"
+                : "border-border bg-surface text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
@@ -145,7 +143,7 @@ function ImportPage() {
             onFile={handleFile}
             busy={runImport.isPending}
           />
-          <p className="text-xs text-muted-foreground/60 leading-relaxed pl-1">
+          <p className="text-xs text-muted-foreground leading-relaxed pl-1">
             Real-time Google OAuth sync is on the roadmap. For now the CSV export captures all details and works offline.
           </p>
         </div>
@@ -159,22 +157,22 @@ function ImportPage() {
       )}
 
       <section className="space-y-4">
-        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/80 pl-1">
+        <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground pl-1">
           Recent imports
         </h2>
-        <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-white/5">
+        <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-border shadow-xl">
           {history.data?.batches.length === 0 && (
             <p className="p-6 text-center text-sm text-muted-foreground">No imports yet.</p>
           )}
           {history.data?.batches.map((b: any) => (
-            <div key={b.id} className="p-4 flex items-center justify-between text-sm hover:bg-white/[0.01] transition-colors">
+            <div key={b.id} className="p-4 flex items-center justify-between text-sm hover:bg-surface-2 transition-colors">
               <div>
                 <p className="font-semibold text-xs uppercase tracking-wide text-primary">{b.source}</p>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
                   {b.total_imported} imported · {b.total_skipped} duplicates skipped
                 </p>
               </div>
-              <p className="text-[10px] font-mono text-muted-foreground/80">
+              <p className="text-[10px] font-mono text-muted-foreground">
                 {format(new Date(b.created_at), "MMM d, HH:mm")}
               </p>
             </div>
@@ -191,7 +189,7 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className={`text-2xl font-bold mt-1 ${accent ? "text-primary" : "text-white"}`}>{value}</p>
+      <p className={`text-2xl font-extrabold mt-1 ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
@@ -224,17 +222,17 @@ function UploadCard({
         if (f) onFile(f);
       }}
       className={`block cursor-pointer border border-dashed rounded-3xl p-12 text-center transition-all duration-300 ${
-        dragging ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl" : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 hover:shadow-xl"
+        dragging ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl" : "border-border glass-panel hover:bg-surface-2 hover:border-primary/40 hover:shadow-xl"
       }`}
     >
-      <div className="mx-auto size-12 mb-4 bg-white/[0.04] rounded-2xl border border-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+      <div className="mx-auto size-12 mb-4 bg-surface-2 rounded-2xl border border-border flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="17 8 12 3 7 8"/>
           <line x1="12" x2="12" y1="3" y2="15"/>
         </svg>
       </div>
-      <p className="text-base font-semibold text-white">{busy ? "Processing contacts…" : title}</p>
+      <p className="text-base font-bold text-foreground">{busy ? "Processing contacts…" : title}</p>
       <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">{hint}</p>
       <input
         type="file"
@@ -251,4 +249,4 @@ function UploadCard({
       </p>
     </label>
   );
-}
+}
