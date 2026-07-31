@@ -2,9 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const MODEL = "gpt-4o-mini";
-const AUTO_IMPORT_THRESHOLD = 0.8;
-
 const relationshipTypes = [
   "family",
   "friend",
@@ -45,93 +42,9 @@ export type ContactPrediction = z.infer<typeof PredictionSchema> & {
   contact: z.infer<typeof ContactInput>;
 };
 
-async function callAiJson(
-  messages: Array<{ role: string; content: string }>,
-  schema: unknown,
-): Promise<string> {
-  // Skipping AI integration for now as requested.
-  return JSON.stringify({ predictions: [] });
-}
-
-
-async function predictBatch(
-  contacts: Array<z.infer<typeof ContactInput>>,
-): Promise<Array<z.infer<typeof PredictionSchema>>> {
-  if (contacts.length === 0) return [];
-  // Send in batches of 30 to keep AI response fast + reliable.
-  const CHUNK = 30;
-  const all: Array<z.infer<typeof PredictionSchema>> = [];
-  for (let i = 0; i < contacts.length; i += CHUNK) {
-    const chunk = contacts.slice(i, i + CHUNK);
-    const raw = await callAiJson(
-      [
-        {
-          role: "system",
-          content: `You classify contacts for a personal relationship CRM. For each contact, predict:
-- relationship_type: one of ${relationshipTypes.join(", ")}
-- target_cadence_days: how often the user should reach out (family/partner: 7-14, close friend: 14-30, coworker: 14-30, client/investor: 30-60, mentor: 30-60, acquaintance: 90-180)
-- confidence: 0.0-1.0 based on how much signal you have (name-only = <0.5, name+email/company = 0.6-0.8, rich context = 0.9+)
-- reason: one short sentence
-
-Signals to use: company (business context → coworker/client), title, notes, email domain (gmail/personal = friend, corporate = coworker), personal email vs work email.`,
-        },
-        {
-          role: "user",
-          content: `Contacts (index → data):\n${chunk
-            .map((c, idx) => `${idx}: ${JSON.stringify(c)}`)
-            .join("\n")}`,
-        },
-      ],
-      {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          predictions: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                index: { type: "integer" },
-                relationship_type: { type: "string", enum: [...relationshipTypes] },
-                target_cadence_days: { type: "integer" },
-                confidence: { type: "number" },
-                reason: { type: "string" },
-              },
-              required: ["index", "relationship_type", "target_cadence_days", "confidence", "reason"],
-            },
-          },
-        },
-        required: ["predictions"],
-      },
-    );
-    try {
-      const parsed = JSON.parse(raw) as { predictions: Array<z.infer<typeof PredictionSchema>> };
-      for (const p of parsed.predictions) all.push({ ...p, index: p.index + i });
-    } catch {
-      // Fallback: mark this chunk as low confidence unknown
-      chunk.forEach((_, j) =>
-        all.push({
-          index: i + j,
-          relationship_type: "acquaintance",
-          target_cadence_days: 90,
-          confidence: 0.3,
-          reason: "AI parse failed",
-        }),
-      );
-    }
-  }
-  return all;
-}
-
-/**
- * Preview: takes parsed contacts, runs AI predictions, dedupes against
- * existing contacts, and auto-imports high-confidence ones.
- * Returns the review queue (low-confidence remainders).
- */
 export const previewAndImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         source: z.enum(["vcard", "csv", "google"]),
@@ -206,8 +119,8 @@ export const previewAndImport = createServerFn({ method: "POST" })
       birthday: c.birthday || null,
       bio: c.notes || null,
       location: c.address || null,
-      relationship_type: "friend", // Default to friend
-      target_cadence_days: 30, // Default to 30 days
+      relationship_type: "friend",
+      target_cadence_days: 30,
       import_source: data.source,
       external_id: c.external_id || null,
       tags: [],
@@ -245,12 +158,9 @@ export const previewAndImport = createServerFn({ method: "POST" })
     };
   });
 
-/**
- * Commit the reviewed contacts: user has approved (possibly edited) predictions.
- */
 export const commitReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         batch_id: z.string().uuid().optional(),
@@ -314,6 +224,7 @@ export const commitReview = createServerFn({ method: "POST" })
 
 export const listImports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .validator((data?: unknown) => data)
   .handler(async ({ context }) => {
     const { data } = await context.supabase
       .from("import_batches")

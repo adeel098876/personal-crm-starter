@@ -10,7 +10,7 @@ export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async
 
 export const savePushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         endpoint: z.string().url(),
@@ -42,7 +42,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
 
 export const deletePushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z.object({ endpoint: z.string().url() }).parse(data),
   )
   .handler(async ({ data, context }) => {
@@ -69,6 +69,7 @@ export const listPushSubscriptions = createServerFn({ method: "GET" })
 
 export const testPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .validator((data?: unknown) => data)
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: subs } = await supabase

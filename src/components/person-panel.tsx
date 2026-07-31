@@ -10,7 +10,13 @@ import {
 } from "@/lib/people.functions";
 import { logInteraction } from "@/lib/interactions.functions";
 import { createPromise, resolvePromise } from "@/lib/reminders.functions";
-import { meetingPrep, summarizeNotes } from "@/lib/ai.functions";
+import {
+  meetingPrep,
+  summarizeNotes,
+  getConversationStarters,
+  draftMessage,
+  diagnoseRelationship,
+} from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -20,14 +26,71 @@ const INTERACTION_TYPES = [
   "call", "message", "meeting", "email", "coffee", "gift", "note", "milestone",
 ] as const;
 
+const DRAFT_OCCASIONS = [
+  { value: "birthday", label: "🎂 Birthday" },
+  { value: "checkin", label: "👋 Check-in" },
+  { value: "followup", label: "🔄 Follow-up" },
+  { value: "thankyou", label: "🙏 Thank you" },
+  { value: "congratulations", label: "🎉 Congrats" },
+  { value: "apology", label: "💙 Apology" },
+] as const;
+
 function initials(name: string) {
   const parts = name.split(" ").filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
 }
 
-function Spinner() {
+function Spinner({ size = 3 }: { size?: number }) {
   return (
-    <span className="inline-block size-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+    <span
+      className={`inline-block rounded-full border-2 border-current border-t-transparent animate-spin`}
+      style={{ width: `${size * 4}px`, height: `${size * 4}px` }}
+    />
+  );
+}
+
+function AiCard({
+  title,
+  icon,
+  children,
+  accent = false,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl p-4 space-y-3 shadow-md border ${
+        accent
+          ? "bg-primary/[0.04] border-primary/25"
+          : "glass-panel border-border/60"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-base">{icon}</span>
+        <h3 className="text-[9px] font-bold uppercase tracking-widest text-primary">{title}</h3>
+        <span className="ml-auto size-1.5 rounded-full bg-primary animate-pulse" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+      className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3 py-1 hover:bg-primary hover:text-primary-foreground transition-all active:scale-95"
+    >
+      {copied ? "Copied ✓" : "Copy"}
+    </button>
   );
 }
 
@@ -41,14 +104,13 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const qc = useQueryClient();
   const [visible, setVisible] = useState(false);
 
-  // Lock body scroll and trigger entrance animation
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
+    const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const t = requestAnimationFrame(() => setVisible(true));
     return () => {
       cancelAnimationFrame(t);
-      document.body.style.overflow = originalOverflow;
+      document.body.style.overflow = orig;
     };
   }, []);
 
@@ -57,11 +119,8 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
     setTimeout(onClose, 320);
   };
 
-  // Close on Escape key
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
@@ -84,25 +143,38 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const resolveProm = useServerFn(resolvePromise);
   const fetchBrief = useServerFn(meetingPrep);
   const fetchSummary = useServerFn(summarizeNotes);
+  const fetchStarters = useServerFn(getConversationStarters);
+  const fetchDraft = useServerFn(draftMessage);
+  const fetchDiagnosis = useServerFn(diagnoseRelationship);
 
   const q = useQuery({
     queryKey: ["person", id],
     queryFn: () => fetchPerson({ data: { id } }),
   });
 
-  /* AI States */
+  /* AI state */
   const [brief, setBrief] = useState<string | null>(null);
   const [briefBusy, setBriefBusy] = useState(false);
   const [rawNotesText, setRawNotesText] = useState("");
   const [summaryResult, setSummaryResult] = useState<any>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
+  const [starters, setStarters] = useState<any[] | null>(null);
+  const [startersBusy, setStartersBusy] = useState(false);
+  const [draftOccasion, setDraftOccasion] = useState<string>("checkin");
+  const [draftTone, setDraftTone] = useState<string>("warm");
+  const [draftExtra, setDraftExtra] = useState("");
+  const [draftText, setDraftText] = useState<string | null>(null);
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<any>(null);
+  const [diagnosisBusy, setDiagnosisBusy] = useState(false);
 
   async function generateBrief() {
     setBriefBusy(true);
+    setBrief(null);
     try {
       const res = await fetchBrief({ data: { person_id: id } });
       setBrief(res.brief);
-      toast.success("AI brief generated ✓");
+      toast.success("Meeting brief generated ✓");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Brief generation failed");
     } finally {
@@ -124,91 +196,56 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
     }
   }
 
+  async function generateStarters() {
+    setStartersBusy(true);
+    setStarters(null);
+    try {
+      const res = await fetchStarters({ data: { person_id: id } });
+      setStarters(res.starters);
+      toast.success("Conversation starters ready ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate starters");
+    } finally {
+      setStartersBusy(false);
+    }
+  }
+
+  async function generateDraft() {
+    setDraftBusy(true);
+    setDraftText(null);
+    try {
+      const res = await fetchDraft({
+        data: {
+          person_id: id,
+          occasion: draftOccasion as any,
+          tone: draftTone as any,
+          extra_context: draftExtra || undefined,
+        },
+      });
+      setDraftText(res.message);
+      toast.success("Message drafted ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Draft failed");
+    } finally {
+      setDraftBusy(false);
+    }
+  }
+
+  async function runDiagnosis() {
+    setDiagnosisBusy(true);
+    setDiagnosis(null);
+    try {
+      const res = await fetchDiagnosis({ data: { person_id: id } });
+      setDiagnosis(res);
+      toast.success("Relationship diagnosis ready ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Diagnosis failed");
+    } finally {
+      setDiagnosisBusy(false);
+    }
+  }
+
   /* Mutations */
-  const logMut = useMutation({
-    mutationFn: (vars: { type: string; summary: string }) =>
-      logInt({ data: { person_id: id, type: vars.type as any, summary: vars.summary } }),
-    onSuccess: () => {
-      toast.success("Interaction logged ✓");
-      setIntSummary("");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Log failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const noteMut = useMutation({
-    mutationFn: (body: string) =>
-      addN({ data: { person_id: id, body, pinned: false } }),
-    onSuccess: () => {
-      toast.success("Note saved ✓");
-      setNoteBody("");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Save failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const deleteNoteMut = useMutation({
-    mutationFn: (noteId: string) => removeN({ data: { id: noteId } }),
-    onSuccess: () => {
-      toast.success("Note deleted");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Delete failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const addFieldMut = useMutation({
-    mutationFn: (vars: { category: string; key: string; value: string }) =>
-      addF({ data: { person_id: id, category: vars.category, key: vars.key, value: vars.value || null } }),
-    onSuccess: () => {
-      toast.success("Field added ✓");
-      setFieldKey("");
-      setFieldValue("");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Add field failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const deleteFieldMut = useMutation({
-    mutationFn: (fieldId: string) => removeF({ data: { id: fieldId } }),
-    onSuccess: () => {
-      toast.success("Field removed");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Remove failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const promiseMut = useMutation({
-    mutationFn: (description: string) =>
-      addProm({ data: { person_id: id, description } }),
-    onSuccess: () => {
-      toast.success("Promise added ✓");
-      setPromiseText("");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Add promise failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const keptMut = useMutation({
-    mutationFn: (promiseId: string) =>
-      resolveProm({ data: { id: promiseId, status: "kept" } }),
-    onSuccess: () => {
-      toast.success("Promise marked as kept ✓");
-      invalidate();
-    },
-    onError: (e) => toast.error(`Update failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: () => removePerson({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Contact deleted");
-      invalidate();
-      close();
-    },
-    onError: (e) => toast.error(`Delete failed: ${e instanceof Error ? e.message : "Unknown error"}`),
-  });
-
-  /* Local state */
   const [noteBody, setNoteBody] = useState("");
   const [intType, setIntType] = useState<(typeof INTERACTION_TYPES)[number]>("message");
   const [intSummary, setIntSummary] = useState("");
@@ -216,7 +253,67 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const [fieldKey, setFieldKey] = useState("");
   const [fieldValue, setFieldValue] = useState("");
   const [promiseText, setPromiseText] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes" | "details">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "notes" | "ai" | "details">("overview");
+
+  const logMut = useMutation({
+    mutationFn: (vars: { type: string; summary: string }) =>
+      logInt({ data: { person_id: id, type: vars.type as any, summary: vars.summary } }),
+    onSuccess: () => { toast.success("Interaction logged ✓"); setIntSummary(""); invalidate(); },
+    onError: (e) => toast.error(`Log failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const noteMut = useMutation({
+    mutationFn: (body: string) => addN({ data: { person_id: id, body, pinned: false } }),
+    onSuccess: () => { toast.success("Note saved ✓"); setNoteBody(""); invalidate(); },
+    onError: (e) => toast.error(`Save failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const deleteNoteMut = useMutation({
+    mutationFn: (noteId: string) => removeN({ data: { id: noteId } }),
+    onSuccess: () => { toast.success("Note deleted"); invalidate(); },
+    onError: (e) => toast.error(`Delete failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const addFieldMut = useMutation({
+    mutationFn: (vars: { category: string; key: string; value: string }) =>
+      addF({ data: { person_id: id, category: vars.category, key: vars.key, value: vars.value || null } }),
+    onSuccess: () => { toast.success("Field added ✓"); setFieldKey(""); setFieldValue(""); invalidate(); },
+    onError: (e) => toast.error(`Add field failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const deleteFieldMut = useMutation({
+    mutationFn: (fieldId: string) => removeF({ data: { id: fieldId } }),
+    onSuccess: () => { toast.success("Field removed"); invalidate(); },
+    onError: (e) => toast.error(`Remove failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const promiseMut = useMutation({
+    mutationFn: (description: string) => addProm({ data: { person_id: id, description } }),
+    onSuccess: () => { toast.success("Promise added ✓"); setPromiseText(""); invalidate(); },
+    onError: (e) => toast.error(`Add promise failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const keptMut = useMutation({
+    mutationFn: (promiseId: string) => resolveProm({ data: { id: promiseId, status: "kept" } }),
+    onSuccess: () => { toast.success("Promise marked as kept ✓"); invalidate(); },
+    onError: (e) => toast.error(`Update failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => removePerson({ data: { id } }),
+    onSuccess: () => { toast.success("Contact deleted"); invalidate(); close(); },
+    onError: (e) => toast.error(`Delete failed: ${e instanceof Error ? e.message : "Error"}`),
+  });
+
+  const diagnosisColors: Record<string, string> = {
+    Thriving: "text-emerald-400",
+    Healthy: "text-green-400",
+    Drifting: "text-amber-400",
+    "At Risk": "text-orange-400",
+    Dormant: "text-red-400",
+  };
+
+  const TABS = ["overview", "timeline", "notes", "ai", "details"] as const;
 
   return (
     <>
@@ -227,12 +324,12 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
         onClick={close}
       />
 
-      {/* Slide-over panel */}
+      {/* Slide-over */}
       <div
         className="fixed inset-y-0 right-0 z-50 w-full max-w-lg flex flex-col shadow-2xl transition-transform duration-300 ease-out"
         style={{
           transform: visible ? "translateX(0)" : "translateX(100%)",
-          background: "var(--glass-bg, rgba(10,10,15,0.92))",
+          background: "var(--glass-bg, rgba(10,10,15,0.93))",
           backdropFilter: "blur(40px) saturate(180%)",
           borderLeft: "1px solid var(--border)",
         }}
@@ -250,7 +347,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
           </button>
         </div>
 
-        {/* Scrollable body */}
+        {/* Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           {q.isLoading && (
             <div className="flex items-center justify-center h-32">
@@ -262,10 +359,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
           )}
           {q.data && (() => {
             const { person, interactions, notes, fields, promises, health } = q.data;
-            const normalizedNotes = notes.map((n: any) => ({
-              ...n,
-              body: n.body || n.content || "",
-            }));
+            const normalizedNotes = notes.map((n: any) => ({ ...n, body: n.body || n.content || "" }));
 
             return (
               <div className="p-6 space-y-6">
@@ -302,50 +396,24 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
 
                 {/* Tabs */}
                 <div className="flex gap-1 bg-surface-2 rounded-2xl p-1">
-                  {(["overview", "timeline", "notes", "details"] as const).map((tab) => (
+                  {TABS.map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-2 rounded-xl transition-all duration-200 capitalize
+                      className={`flex-1 text-[8px] font-bold uppercase tracking-wider py-2 rounded-xl transition-all duration-200 capitalize
                         ${activeTab === tab
                           ? "bg-primary text-primary-foreground shadow-md"
                           : "text-muted-foreground hover:text-foreground"
                         }`}
                     >
-                      {tab} {tab === "timeline" && `(${interactions.length})`}
+                      {tab === "timeline" ? `Log (${interactions.length})` : tab === "ai" ? "✨ AI" : tab}
                     </button>
                   ))}
                 </div>
 
-                {/* ── Tab: Overview ── */}
+                {/* ── Overview ── */}
                 {activeTab === "overview" && (
                   <div className="space-y-5">
-                    {/* Groq AI Meeting Prep Brief */}
-                    <div className="glass-panel bg-primary/[0.03] border border-primary/20 rounded-2xl p-4 shadow-md space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="size-2 rounded-full bg-primary animate-pulse" />
-                          <h3 className="text-[9px] font-bold uppercase tracking-widest text-primary">Groq AI Meeting Brief</h3>
-                        </div>
-                        <button
-                          onClick={generateBrief}
-                          disabled={briefBusy}
-                          className="text-[9px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-opacity disabled:opacity-50 flex items-center gap-1"
-                        >
-                          {briefBusy ? <><Spinner /> Generating…</> : brief ? "Regenerate →" : "Generate Brief →"}
-                        </button>
-                      </div>
-                      {brief ? (
-                        <div className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap font-medium border-t border-border/50 pt-2.5">
-                          {brief}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Generate an instant AI meeting brief analyzing timeline, notes, and open promises.
-                        </p>
-                      )}
-                    </div>
-
                     {/* Log interaction */}
                     <div>
                       <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Log Interaction</h3>
@@ -376,30 +444,27 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                           onClick={() => logMut.mutate({ type: intType, summary: intSummary })}
                           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                          {logMut.isPending ? <><Spinner /> Logging…</> : "Log"}
+                          {logMut.isPending ? <><Spinner /> Logging…</> : "Log Interaction"}
                         </button>
                       </div>
                     </div>
 
-                    {/* Recent Timeline Logs Preview */}
+                    {/* Recent activity */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Recent Activity Logs</h3>
+                        <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Recent Activity</h3>
                         {interactions.length > 3 && (
-                          <button
-                            onClick={() => setActiveTab("timeline")}
-                            className="text-[9px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-opacity"
-                          >
-                            View all ({interactions.length}) →
+                          <button onClick={() => setActiveTab("timeline")} className="text-[9px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-opacity">
+                            All ({interactions.length}) →
                           </button>
                         )}
                       </div>
                       <div className="glass-panel rounded-2xl p-4 shadow-md">
                         {interactions.length === 0 ? (
-                          <p className="text-xs text-muted-foreground py-2 text-center">No interactions logged yet.</p>
+                          <p className="text-xs text-muted-foreground py-2 text-center">No interactions yet.</p>
                         ) : (
                           <div className="border-l border-border ml-2 pl-4 space-y-4 py-1">
-                            {interactions.slice(0, 4).map((i: any) => (
+                            {interactions.slice(0, 3).map((i: any) => (
                               <div key={i.id} className="relative">
                                 <div className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-background" />
                                 <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
@@ -454,9 +519,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                               )}
                             </div>
                           ))}
-                          {promises.length === 0 && (
-                            <p className="text-xs text-muted-foreground py-2">No promises yet.</p>
-                          )}
+                          {promises.length === 0 && <p className="text-xs text-muted-foreground py-2">No promises yet.</p>}
                         </div>
                       </div>
                     </div>
@@ -470,12 +533,12 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                       }}
                       className="w-full text-[10px] font-bold uppercase tracking-wider text-destructive border border-destructive/20 hover:bg-destructive/10 rounded-full py-3 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {deleteMut.isPending ? <><Spinner /> Deleting…</> : "Delete person"}
+                      {deleteMut.isPending ? <><Spinner /> Deleting…</> : "Delete contact"}
                     </button>
                   </div>
                 )}
 
-                {/* ── Tab: Timeline ── */}
+                {/* ── Timeline ── */}
                 {activeTab === "timeline" && (
                   <div>
                     {interactions.length === 0 ? (
@@ -497,10 +560,9 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                   </div>
                 )}
 
-                {/* ── Tab: Notes ── */}
+                {/* ── Notes ── */}
                 {activeTab === "notes" && (
                   <div className="space-y-4">
-                    {/* Notes Input */}
                     <div className="glass-panel rounded-2xl p-4 space-y-3 shadow-md">
                       <textarea
                         rows={3}
@@ -515,14 +577,13 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                           onClick={() => noteMut.mutate(noteBody)}
                           className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
                         >
-                          {noteMut.isPending ? <><Spinner /> Saving…</> : "Save"}
+                          {noteMut.isPending ? <><Spinner /> Saving…</> : "Save Note"}
                         </button>
                       </div>
                     </div>
 
-                    {/* Groq AI Notes Summarizer */}
-                    <div className="glass-panel border border-primary/20 bg-primary/[0.02] rounded-2xl p-4 space-y-3 shadow-md">
-                      <h3 className="text-[9px] font-bold uppercase tracking-widest text-primary">Summarize Raw Notes with Groq AI</h3>
+                    {/* AI Note Summarizer */}
+                    <AiCard title="AI Notes Summarizer" icon="🧾" accent>
                       <textarea
                         rows={3}
                         placeholder="Paste raw unstructured meeting notes here to extract summary & action items…"
@@ -540,7 +601,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                         </button>
                       </div>
                       {summaryResult && (
-                        <div className="mt-3 space-y-3 text-xs border-t border-border/60 pt-3">
+                        <div className="space-y-3 text-xs border-t border-border/60 pt-3">
                           <div>
                             <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">AI Summary</p>
                             <p className="text-foreground mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
@@ -550,18 +611,16 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                               <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">Action Items</p>
                               <ul className="list-disc pl-4 mt-1 space-y-1 text-foreground/90">
                                 {summaryResult.actions.map((a: any, idx: number) => (
-                                  <li key={idx}>
-                                    <span className="text-primary font-bold">{a.owner}:</span> {a.description}
-                                  </li>
+                                  <li key={idx}><span className="text-primary font-bold">{a.owner}:</span> {a.description}</li>
                                 ))}
                               </ul>
                             </div>
                           )}
                         </div>
                       )}
-                    </div>
+                    </AiCard>
 
-                    {/* Saved Notes List */}
+                    {/* Saved Notes */}
                     <div className="space-y-3">
                       {normalizedNotes.map((n: any) => (
                         <div key={n.id} className="glass-panel rounded-2xl p-4 relative shadow-md">
@@ -583,7 +642,174 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                   </div>
                 )}
 
-                {/* ── Tab: Details ── */}
+                {/* ── AI Tab ── */}
+                {activeTab === "ai" && (
+                  <div className="space-y-5">
+
+                    {/* 1. Meeting Brief */}
+                    <AiCard title="Meeting Brief" icon="📋" accent>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Instant AI brief analyzing timeline, notes, and open promises before your meeting.
+                      </p>
+                      <button
+                        onClick={generateBrief}
+                        disabled={briefBusy}
+                        className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {briefBusy ? <><Spinner /> Generating…</> : brief ? "Regenerate Brief" : "Generate Brief →"}
+                      </button>
+                      {brief && (
+                        <div className="border-t border-border/50 pt-3 space-y-2">
+                          <div className="flex justify-end">
+                            <CopyButton text={brief} />
+                          </div>
+                          <div className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap font-medium">
+                            {brief}
+                          </div>
+                        </div>
+                      )}
+                    </AiCard>
+
+                    {/* 2. Conversation Starters */}
+                    <AiCard title="Conversation Starters" icon="💬" accent>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        AI-crafted personalized openers based on your relationship history.
+                      </p>
+                      <button
+                        onClick={generateStarters}
+                        disabled={startersBusy}
+                        className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {startersBusy ? <><Spinner /> Thinking…</> : starters ? "Regenerate" : "Generate Starters →"}
+                      </button>
+                      {starters && starters.length > 0 && (
+                        <div className="border-t border-border/50 pt-3 space-y-3">
+                          {starters.map((s: any, i: number) => (
+                            <div key={i} className="glass-panel rounded-xl p-3 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                  s.tone === "warm" ? "bg-amber-500/15 text-amber-400" :
+                                  s.tone === "professional" ? "bg-blue-500/15 text-blue-400" :
+                                  "bg-purple-500/15 text-purple-400"
+                                }`}>{s.tone}</span>
+                                <CopyButton text={s.opener} />
+                              </div>
+                              <p className="text-xs font-semibold text-foreground leading-relaxed">"{s.opener}"</p>
+                              <p className="text-[10px] text-muted-foreground">{s.context}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </AiCard>
+
+                    {/* 3. Draft a Message */}
+                    <AiCard title="Draft a Message" icon="✉️" accent>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Occasion</p>
+                          <select
+                            value={draftOccasion}
+                            onChange={(e) => setDraftOccasion(e.target.value)}
+                            className="w-full glass-input rounded-xl px-3 py-2 text-xs focus:outline-none"
+                          >
+                            {DRAFT_OCCASIONS.map((o) => (
+                              <option key={o.value} value={o.value} className="bg-popover text-popover-foreground">{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Tone</p>
+                          <select
+                            value={draftTone}
+                            onChange={(e) => setDraftTone(e.target.value)}
+                            className="w-full glass-input rounded-xl px-3 py-2 text-xs focus:outline-none"
+                          >
+                            <option value="warm" className="bg-popover">Warm</option>
+                            <option value="professional" className="bg-popover">Professional</option>
+                            <option value="casual" className="bg-popover">Casual</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input
+                        placeholder="Extra context (optional)…"
+                        value={draftExtra}
+                        onChange={(e) => setDraftExtra(e.target.value)}
+                        className="w-full glass-input rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none"
+                      />
+                      <button
+                        onClick={generateDraft}
+                        disabled={draftBusy}
+                        className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {draftBusy ? <><Spinner /> Drafting…</> : draftText ? "Redraft →" : "Draft Message →"}
+                      </button>
+                      {draftText && (
+                        <div className="border-t border-border/50 pt-3 space-y-2">
+                          <div className="flex justify-end">
+                            <CopyButton text={draftText} />
+                          </div>
+                          <p className="text-xs leading-relaxed text-foreground font-medium whitespace-pre-wrap">{draftText}</p>
+                        </div>
+                      )}
+                    </AiCard>
+
+                    {/* 4. Relationship Diagnosis */}
+                    <AiCard title="Relationship Diagnosis" icon="🧠" accent>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        AI deep-reads your interaction history and gives an honest relationship audit with specific recommendations.
+                      </p>
+                      <button
+                        onClick={runDiagnosis}
+                        disabled={diagnosisBusy}
+                        className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {diagnosisBusy ? <><Spinner /> Analyzing…</> : diagnosis ? "Re-analyze →" : "Run Diagnosis →"}
+                      </button>
+                      {diagnosis && (
+                        <div className="border-t border-border/50 pt-3 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-lg font-black ${diagnosisColors[diagnosis.score_label] ?? "text-foreground"}`}>
+                              {diagnosis.score_label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-foreground/90 leading-relaxed font-medium">{diagnosis.summary}</p>
+                          {diagnosis.strengths?.length > 0 && (
+                            <div>
+                              <p className="text-[8px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Strengths</p>
+                              <ul className="space-y-1">
+                                {diagnosis.strengths.map((s: string, i: number) => (
+                                  <li key={i} className="text-xs text-foreground/80 flex items-start gap-1.5">
+                                    <span className="text-emerald-400 mt-0.5">✓</span> {s}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {diagnosis.risks?.length > 0 && (
+                            <div>
+                              <p className="text-[8px] font-bold uppercase tracking-wider text-orange-400 mb-1">Watch out for</p>
+                              <ul className="space-y-1">
+                                {diagnosis.risks.map((r: string, i: number) => (
+                                  <li key={i} className="text-xs text-foreground/80 flex items-start gap-1.5">
+                                    <span className="text-orange-400 mt-0.5">!</span> {r}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {diagnosis.top_action && (
+                            <div className="bg-primary/10 border border-primary/20 rounded-xl p-3">
+                              <p className="text-[8px] font-bold uppercase tracking-wider text-primary mb-1">Top Action This Week</p>
+                              <p className="text-xs font-semibold text-foreground">{diagnosis.top_action}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </AiCard>
+                  </div>
+                )}
+
+                {/* ── Details ── */}
                 {activeTab === "details" && (
                   <div className="space-y-4">
                     <div className="glass-panel rounded-2xl p-4 space-y-3 shadow-md">

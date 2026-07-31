@@ -27,12 +27,30 @@ function TodayPage() {
 
   const dashboard = useQuery({
     queryKey: ["dashboard"],
-    queryFn: () => fetchDashboard(),
+    queryFn: async () => {
+      const res = await fetchDashboard();
+      return res as {
+        birthdays: Array<{ person: any; when: string; kind: string }>;
+        reachOut: Array<{ person: any; score: number; daysSince: number | null }>;
+        reminders: any[];
+        promises: any[];
+        totalPeople: number;
+        scoresById: Record<string, number>;
+      };
+    },
   });
 
   const nudges = useQuery({
     queryKey: ["nudges"],
-    queryFn: () => fetchNudges(),
+    queryFn: async () => {
+      const res = await fetchNudges();
+      // Normalise: server may return { nudges: [...] } or the array directly
+      const data = res as any;
+      const nudgeList: Array<{ person_id: string; headline: string; reason: string; suggested_action: string }> =
+        Array.isArray(data) ? data :
+        Array.isArray(data?.nudges) ? data.nudges : [];
+      return { nudges: nudgeList };
+    },
     enabled: nudgesOn,
   });
 
@@ -138,55 +156,119 @@ function TodayPage() {
             <div className="flex items-center gap-2.5">
               <span className="size-2 rounded-full bg-primary animate-pulse" />
               <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
-                Insights Engine
+                ✨ AI Insights Engine
               </h2>
             </div>
-            {!nudgesOn && (
-              <button
-                onClick={() => setNudgesOn(true)}
-                disabled={empty}
-                className="text-[10px] font-bold uppercase tracking-widest text-primary hover:opacity-80 transition-colors disabled:opacity-30"
-              >
-                Generate →
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {nudgesOn && !nudges.isLoading && (
+                <button
+                  onClick={() => qc.invalidateQueries({ queryKey: ["nudges"] })}
+                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                >
+                  ↺ Refresh
+                </button>
+              )}
+              {!nudgesOn && (
+                <button
+                  onClick={() => setNudgesOn(true)}
+                  disabled={empty}
+                  className="text-[10px] font-bold uppercase tracking-widest text-primary hover:opacity-80 transition-colors disabled:opacity-30"
+                >
+                  Generate →
+                </button>
+              )}
+            </div>
           </div>
 
           {!nudgesOn && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              AI executive assistant. Click Generate to get today's three most important actions,
-              based on cadence, promises, and dates.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your AI relationship coach analyzes your cadence, open promises, and upcoming
+                birthdays — then surfaces the <strong className="text-foreground">3 most important actions</strong> to take today.
+              </p>
+              <button
+                onClick={() => setNudgesOn(true)}
+                disabled={empty}
+                className="inline-flex items-center gap-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-30"
+              >
+                ✨ Generate AI Nudges
+              </button>
+            </div>
           )}
+
           {nudgesOn && nudges.isLoading && (
-            <p className="text-sm text-muted-foreground animate-pulse">Thinking…</p>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse rounded-2xl bg-surface-2 border border-border p-4 space-y-2">
+                  <div className="h-3 bg-border/60 rounded w-1/3" />
+                  <div className="h-4 bg-border/40 rounded w-2/3" />
+                  <div className="h-3 bg-border/30 rounded w-full" />
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground text-center animate-pulse font-medium uppercase tracking-widest">
+                AI is analyzing your relationships…
+              </p>
+            </div>
           )}
+
           {nudgesOn && nudges.error && (
-            <p className="text-sm text-destructive">
-              {(nudges.error as Error).message}
-            </p>
+            <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-4 space-y-2">
+              <p className="text-sm text-destructive font-semibold">
+                {(nudges.error as Error).message.includes("GROQ_API_KEY")
+                  ? "⚠️ GROQ_API_KEY not configured"
+                  : "AI request failed"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {(nudges.error as Error).message.includes("GROQ_API_KEY")
+                  ? "Add your Groq API key to .env: GROQ_API_KEY=gsk_..."
+                  : (nudges.error as Error).message}
+              </p>
+              <button
+                onClick={() => qc.invalidateQueries({ queryKey: ["nudges"] })}
+                className="text-[9px] font-bold uppercase tracking-wider text-primary hover:opacity-80 transition-opacity"
+              >
+                ↺ Retry
+              </button>
+            </div>
           )}
+
           {nudgesOn && nudges.data && (
-            <div className="space-y-4">
-              {nudges.data.nudges.length === 0 && (
-                <p className="text-sm text-muted-foreground">No suggestions right now.</p>
+            <div className="space-y-3">
+              {(nudges.data.nudges?.length ?? 0) === 0 && (
+                <p className="text-sm text-muted-foreground">No suggestions right now — all your relationships look healthy!</p>
               )}
-              {nudges.data.nudges.map((n, i) => (
+              {(nudges.data.nudges ?? []).map((n: any, i: number) => {
+                const priorityStyle =
+                  n.priority === "high"
+                    ? "border-red-400/30 bg-red-400/5 text-red-400"
+                    : n.priority === "medium"
+                    ? "border-amber-400/30 bg-amber-400/5 text-amber-400"
+                    : "border-blue-400/30 bg-blue-400/5 text-blue-400";
+                return (
                 <button
                   key={i}
-                  onClick={() => setSelectedPersonId(n.person_id)}
-                  className="flex items-start gap-4 text-left w-full hover:bg-surface-2 p-2.5 rounded-2xl transition-colors group cursor-pointer"
+                  onClick={() => n.person_id && setSelectedPersonId(n.person_id)}
+                  className="w-full text-left glass-panel glass-panel-hover rounded-2xl p-4 space-y-2 transition-all duration-200 group hover:border-primary/30 cursor-pointer"
                 >
-                  <div className="mt-1.5 text-primary">
-                    <div className="size-1.5 border-t-2 border-r-2 border-primary rotate-45 group-hover:translate-x-0.5 transition-transform" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-foreground/70">{n.name}</span>
+                    {n.priority && (
+                      <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${priorityStyle}`}>
+                        {n.priority}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm leading-relaxed">
-                    <span className="text-foreground font-semibold">{n.headline}:</span>{" "}
-                    <span className="text-muted-foreground">{n.reason}</span>{" "}
-                    <span className="text-primary font-medium">— {n.suggested_action}</span>
+                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                    {n.headline}
                   </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{n.reason}</p>
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="size-1 rounded-full bg-primary" />
+                    <p className="text-[10px] text-primary font-semibold">{n.suggested_action}</p>
+                  </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

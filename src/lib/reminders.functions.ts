@@ -13,7 +13,7 @@ const ReminderInput = z.object({
 
 export const listReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { status?: string } = {}) => data)
+  .validator((data: { status?: string } = {}) => data)
   .handler(async ({ data, context }) => {
     const status = data.status ?? "open";
     const { data: reminders, error } = await context.supabase
@@ -28,7 +28,7 @@ export const listReminders = createServerFn({ method: "POST" })
 
 export const createReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => ReminderInput.parse(data))
+  .validator((data: unknown) => ReminderInput.parse(data))
   .handler(async ({ data, context }) => {
     const { data: created, error } = await context.supabase
       .from("reminders")
@@ -41,7 +41,7 @@ export const createReminder = createServerFn({ method: "POST" })
 
 export const completeReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("reminders")
@@ -54,7 +54,7 @@ export const completeReminder = createServerFn({ method: "POST" })
 
 export const snoozeReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z.object({ id: z.string().uuid(), days: z.number().int().min(1).max(365) }).parse(data),
   )
   .handler(async ({ data, context }) => {
@@ -70,7 +70,7 @@ export const snoozeReminder = createServerFn({ method: "POST" })
 
 export const createPromise = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         person_id: z.string().uuid(),
@@ -99,13 +99,12 @@ export const createPromise = createServerFn({ method: "POST" })
 
 export const resolvePromise = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({ id: z.string().uuid(), status: z.enum(["kept", "broken", "cancelled"]) })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    // Try updating with completed_at first
     let res = await context.supabase
       .from("promises")
       .update({ status: data.status, completed_at: new Date().toISOString() })
@@ -113,7 +112,6 @@ export const resolvePromise = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
 
     if (res.error) {
-      // Fallback if completed_at column does not exist
       res = await context.supabase
         .from("promises")
         .update({ status: data.status })

@@ -35,7 +35,7 @@ const CreatePersonInput = z.object({
 
 export const listPeople = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { search?: string } = {}) => data)
+  .validator((data: { search?: string } = {}) => data)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     let q = supabase
@@ -52,7 +52,7 @@ export const listPeople = createServerFn({ method: "POST" })
 
 export const getPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: person, error } = await supabase
@@ -133,7 +133,7 @@ export const getPerson = createServerFn({ method: "POST" })
 
 export const createPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => CreatePersonInput.parse(data))
+  .validator((data: unknown) => CreatePersonInput.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const payload = {
@@ -154,7 +154,7 @@ export const createPerson = createServerFn({ method: "POST" })
 
 export const updatePerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({ id: z.string().uuid() })
       .merge(CreatePersonInput.partial())
@@ -182,7 +182,7 @@ export const updatePerson = createServerFn({ method: "POST" })
 
 export const deletePerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -196,7 +196,7 @@ export const deletePerson = createServerFn({ method: "POST" })
 
 export const addNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         person_id: z.string().uuid(),
@@ -226,7 +226,7 @@ export const addNote = createServerFn({ method: "POST" })
 
 export const deleteNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("notes")
@@ -239,7 +239,7 @@ export const deleteNote = createServerFn({ method: "POST" })
 
 export const addField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z
       .object({
         person_id: z.string().uuid(),
@@ -261,7 +261,7 @@ export const addField = createServerFn({ method: "POST" })
 
 export const deleteField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("person_fields")

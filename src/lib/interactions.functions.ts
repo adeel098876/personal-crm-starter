@@ -14,7 +14,7 @@ const InteractionInput = z.object({
 
 export const logInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => InteractionInput.parse(data))
+  .validator((data: unknown) => InteractionInput.parse(data))
   .handler(async ({ data, context }) => {
     const payload: any = {
       person_id: data.person_id,
@@ -55,7 +55,7 @@ export const logInteraction = createServerFn({ method: "POST" })
 
 export const deleteInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("interactions")

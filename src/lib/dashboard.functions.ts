@@ -4,6 +4,7 @@ import { computeHealthScore } from "./health";
 
 export const getDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .validator((data?: unknown) => data)
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const [pplRes, remRes, promRes, intRes] = await Promise.all([
@@ -98,6 +99,7 @@ export const getDashboard = createServerFn({ method: "POST" })
 
 export const getAnalytics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .validator((data?: unknown) => data)
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const since = new Date(Date.now() - 90 * 86400000).toISOString();
