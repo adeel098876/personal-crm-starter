@@ -14,16 +14,23 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/today", replace: true });
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (data.session) navigate({ to: "/today", replace: true });
+      })
+      .catch((err) => {
+        console.warn("[Auth] Failed to reach Supabase:", err);
+        setConnectionError("Unable to reach your Supabase backend URL. Please verify VITE_SUPABASE_URL in your .env file.");
+      });
   }, [navigate]);
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setConnectionError(null);
     try {
       if (mode === "sign_up") {
         const { error } = await supabase.auth.signUp({
@@ -39,7 +46,14 @@ function AuthPage() {
       }
       navigate({ to: "/today", replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      if (msg.includes("Failed to fetch") || msg.includes("ERR_NAME_NOT_RESOLVED")) {
+        const urlErr = "Cannot resolve Supabase server URL. Check your VITE_SUPABASE_URL in .env file.";
+        setConnectionError(urlErr);
+        toast.error(urlErr);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }
@@ -47,16 +61,20 @@ function AuthPage() {
 
   async function handleGoogle() {
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    if (error) {
-      toast.error(error.message ?? "Google sign-in failed");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) {
+        toast.error(error.message ?? "Google sign-in failed");
+      }
+    } catch (err) {
+      toast.error("Network error reaching Supabase server.");
+    } finally {
       setBusy(false);
-      return;
     }
   }
 
@@ -89,15 +107,24 @@ function AuthPage() {
           </p>
         </div>
 
-        <div className="glass-panel rounded-3xl p-7 shadow-2xl">
-          <div className="flex gap-1 mb-6 p-1 bg-surface-2 rounded-2xl border border-border text-[10px] font-mono uppercase tracking-widest">
+        <div className="glass-panel rounded-3xl p-7 shadow-2xl space-y-4">
+          {connectionError && (
+            <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/30 text-xs text-destructive leading-relaxed">
+              <p className="font-bold mb-1">Supabase Connection Error</p>
+              <p>{connectionError}</p>
+            </div>
+          )}
+
+          <div className="flex gap-1 p-1 bg-surface-2 rounded-2xl border border-border text-[10px] font-mono uppercase tracking-widest">
             <button
+              type="button"
               onClick={() => setMode("sign_in")}
               className={`flex-1 py-2 rounded-xl transition-all duration-200 ${mode === "sign_in" ? "bg-primary text-primary-foreground font-semibold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               Sign In
             </button>
             <button
+              type="button"
               onClick={() => setMode("sign_up")}
               className={`flex-1 py-2 rounded-xl transition-all duration-200 ${mode === "sign_up" ? "bg-primary text-primary-foreground font-semibold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
@@ -140,13 +167,14 @@ function AuthPage() {
             </button>
           </form>
 
-          <div className="flex items-center gap-3 my-5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <div className="flex items-center gap-3 my-4 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             <div className="flex-1 border-t border-border" />
             or
             <div className="flex-1 border-t border-border" />
           </div>
 
           <button
+            type="button"
             onClick={handleGoogle}
             disabled={busy}
             className="w-full glass-panel hover:bg-surface-2 border border-border py-3 rounded-2xl text-xs font-semibold transition-all duration-200 active:scale-[0.98]"
