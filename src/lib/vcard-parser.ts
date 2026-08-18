@@ -32,15 +32,15 @@ function unfold(text: string): string[] {
 
 function decodeQP(value: string): string {
   try {
-    return value.replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    );
+    return value.replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   } catch {
     return value;
   }
 }
 
-function parseLine(line: string): { name: string; params: Record<string, string>; value: string } | null {
+function parseLine(
+  line: string,
+): { name: string; params: Record<string, string>; value: string } | null {
   const colonIdx = line.indexOf(":");
   if (colonIdx === -1) return null;
   const head = line.slice(0, colonIdx);
@@ -123,7 +123,10 @@ export function parseVCards(text: string): ParsedContact[] {
         break;
       case "ADR": {
         // ADR: PO;ext;street;city;region;postal;country
-        const parts = value.split(";").map((s) => s.trim()).filter(Boolean);
+        const parts = value
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean);
         if (parts.length) current.address = parts.slice(2).join(", ");
         break;
       }

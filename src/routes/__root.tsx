@@ -79,9 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
       { title: "Kinetic — Relationship OS" },
-      { name: "description", content: "A private, keyboard-first relationship operating system. Never forget a birthday, a promise, or someone who matters." },
+      {
+        name: "description",
+        content:
+          "A private, keyboard-first relationship operating system. Never forget a birthday, a promise, or someone who matters.",
+      },
       { property: "og:title", content: "Kinetic — Relationship OS" },
-      { property: "og:description", content: "A private, keyboard-first relationship operating system." },
+      {
+        property: "og:description",
+        content: "A private, keyboard-first relationship operating system.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#050508" },

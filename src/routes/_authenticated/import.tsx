@@ -5,10 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { parseVCards, type ParsedContact } from "@/lib/vcard-parser";
 import { csvToContacts } from "@/lib/csv-parser";
-import {
-  listImports,
-  previewAndImport,
-} from "@/lib/import.functions";
+import { listImports, previewAndImport } from "@/lib/import.functions";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/import")({
@@ -68,7 +65,11 @@ function ImportPage() {
   async function handleFile(file: File) {
     const text = await file.text();
     const contacts =
-      source === "vcard" ? parseVCards(text) : source === "csv" ? csvToContacts(text) : csvToContacts(text);
+      source === "vcard"
+        ? parseVCards(text)
+        : source === "csv"
+          ? csvToContacts(text)
+          : csvToContacts(text);
     if (contacts.length === 0) {
       toast.error("No contacts found in file.");
       return;
@@ -87,18 +88,23 @@ function ImportPage() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
           Ingest
         </p>
-        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">Import contacts</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
+          Import contacts
+        </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-          Bring in contacts from Google, Apple, or any address book. Contacts are imported immediately with default relationships. You can refine them anytime.
+          Bring in contacts from Google, Apple, or any address book. Contacts are imported
+          immediately with default relationships. You can refine them anytime.
         </p>
       </header>
 
       <div className="flex gap-2 text-[10px] font-semibold uppercase tracking-wider">
-        {([
-          { key: "vcard", label: "vCard (.vcf)" },
-          { key: "csv", label: "CSV" },
-          { key: "google", label: "Google" },
-        ] as const).map((t) => (
+        {(
+          [
+            { key: "vcard", label: "vCard (.vcf)" },
+            { key: "csv", label: "CSV" },
+            { key: "google", label: "Google" },
+          ] as const
+        ).map((t) => (
           <button
             key={t.key}
             onClick={() => {
@@ -144,7 +150,8 @@ function ImportPage() {
             busy={runImport.isPending}
           />
           <p className="text-xs text-muted-foreground leading-relaxed pl-1">
-            Real-time Google OAuth sync is on the roadmap. For now the CSV export captures all details and works offline.
+            Real-time Google OAuth sync is on the roadmap. For now the CSV export captures all
+            details and works offline.
           </p>
         </div>
       )}
@@ -165,9 +172,14 @@ function ImportPage() {
             <p className="p-6 text-center text-sm text-muted-foreground">No imports yet.</p>
           )}
           {history.data?.batches.map((b: any) => (
-            <div key={b.id} className="p-4 flex items-center justify-between text-sm hover:bg-surface-2 transition-colors">
+            <div
+              key={b.id}
+              className="p-4 flex items-center justify-between text-sm hover:bg-surface-2 transition-colors"
+            >
               <div>
-                <p className="font-semibold text-xs uppercase tracking-wide text-primary">{b.source}</p>
+                <p className="font-semibold text-xs uppercase tracking-wide text-primary">
+                  {b.source}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">
                   {b.total_imported} imported · {b.total_skipped} duplicates skipped
                 </p>
@@ -189,7 +201,9 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className={`text-2xl font-extrabold mt-1 ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
+      <p className={`text-2xl font-extrabold mt-1 ${accent ? "text-primary" : "text-foreground"}`}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -222,14 +236,26 @@ function UploadCard({
         if (f) onFile(f);
       }}
       className={`block cursor-pointer border border-dashed rounded-3xl p-12 text-center transition-all duration-300 ${
-        dragging ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl" : "border-border glass-panel hover:bg-surface-2 hover:border-primary/40 hover:shadow-xl"
+        dragging
+          ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl"
+          : "border-border glass-panel hover:bg-surface-2 hover:border-primary/40 hover:shadow-xl"
       }`}
     >
       <div className="mx-auto size-12 mb-4 bg-surface-2 rounded-2xl border border-border flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" x2="12" y1="3" y2="15"/>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="lucide lucide-upload"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" x2="12" y1="3" y2="15" />
         </svg>
       </div>
       <p className="text-base font-bold text-foreground">{busy ? "Processing contacts…" : title}</p>

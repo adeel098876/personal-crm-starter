@@ -25,11 +25,8 @@ function PeoplePage() {
   });
 
   const createMut = useMutation({
-    mutationFn: (input: {
-      name: string;
-      relationship_type: string;
-      target_cadence_days: number;
-    }) => add({ data: input as any }),
+    mutationFn: (input: { name: string; relationship_type: string; target_cadence_days: number }) =>
+      add({ data: input as any }),
     onSuccess: () => {
       toast.success("Person added ✓");
       setOpenCreate(false);
@@ -46,7 +43,9 @@ function PeoplePage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             Roster
           </p>
-          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">People</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
+            People
+          </h1>
         </div>
         <button
           onClick={() => setOpenCreate(true)}
@@ -112,9 +111,7 @@ function PeoplePage() {
       </div>
 
       {/* Slide-over panel pinned to viewport */}
-      {selectedId && (
-        <PersonPanel id={selectedId} onClose={() => setSelectedId(null)} />
-      )}
+      {selectedId && <PersonPanel id={selectedId} onClose={() => setSelectedId(null)} />}
 
       {openCreate && (
         <CreatePersonDialog
@@ -173,10 +170,21 @@ function CreatePersonDialog({
               className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none capitalize"
             >
               {[
-                "family", "friend", "partner", "coworker", "manager",
-                "client", "mentor", "mentee", "investor", "acquaintance", "other",
+                "family",
+                "friend",
+                "partner",
+                "coworker",
+                "manager",
+                "client",
+                "mentor",
+                "mentee",
+                "investor",
+                "acquaintance",
+                "other",
               ].map((t) => (
-                <option key={t} value={t} className="bg-popover text-popover-foreground">{t}</option>
+                <option key={t} value={t} className="bg-popover text-popover-foreground">
+                  {t}
+                </option>
               ))}
             </select>
           </div>

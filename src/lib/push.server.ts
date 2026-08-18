@@ -24,11 +24,10 @@ export interface VapidKeys {
 }
 
 export async function generateVapidKeys(): Promise<VapidKeys> {
-  const pair = await crypto.subtle.generateKey(
-    { name: "ECDSA", namedCurve: "P-256" },
-    true,
-    ["sign", "verify"],
-  );
+  const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
+    "sign",
+    "verify",
+  ]);
   const pubJwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
   const privJwk = await crypto.subtle.exportKey("jwk", pair.privateKey);
   // Compose uncompressed point 0x04 || X || Y
@@ -45,7 +44,10 @@ export async function generateVapidKeys(): Promise<VapidKeys> {
   };
 }
 
-async function importVapidPrivate(privateKeyB64u: string, publicKeyB64u: string): Promise<CryptoKey> {
+async function importVapidPrivate(
+  privateKeyB64u: string,
+  publicKeyB64u: string,
+): Promise<CryptoKey> {
   const pubBytes = base64UrlDecode(publicKeyB64u);
   if (pubBytes.length !== 65 || pubBytes[0] !== 0x04) throw new Error("Invalid VAPID public key");
   const x = base64UrlEncode(pubBytes.slice(1, 33));
@@ -58,7 +60,9 @@ async function importVapidPrivate(privateKeyB64u: string, publicKeyB64u: string)
     y,
     ext: true,
   };
-  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, [
+    "sign",
+  ]);
 }
 
 export async function signVapidJwt(
@@ -72,8 +76,7 @@ export async function signVapidJwt(
     exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
     sub: keys.subject,
   };
-  const enc = (obj: unknown) =>
-    base64UrlEncode(new TextEncoder().encode(JSON.stringify(obj)));
+  const enc = (obj: unknown) => base64UrlEncode(new TextEncoder().encode(JSON.stringify(obj)));
   const unsigned = `${enc(header)}.${enc(payload)}`;
   const privateKey = await importVapidPrivate(keys.privateKey, keys.publicKey);
   const sig = await crypto.subtle.sign(

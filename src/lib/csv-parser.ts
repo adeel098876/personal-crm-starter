@@ -66,8 +66,7 @@ export function csvToContacts(text: string): ParsedContact[] {
     const first = pick(row, ["given name", "first name", "first"]);
     const last = pick(row, ["family name", "last name", "last"]);
     const composedName =
-      pick(row, ["name", "display name"]) ||
-      [first, last].filter(Boolean).join(" ").trim();
+      pick(row, ["name", "display name"]) || [first, last].filter(Boolean).join(" ").trim();
 
     const email = pick(row, [
       "e-mail 1 - value",
@@ -76,22 +75,9 @@ export function csvToContacts(text: string): ParsedContact[] {
       "primary email",
       "e-mail address",
     ]);
-    const phone = pick(row, [
-      "phone 1 - value",
-      "phone",
-      "mobile phone",
-      "primary phone",
-    ]);
-    const company = pick(row, [
-      "organization 1 - name",
-      "organization",
-      "company",
-    ]);
-    const role = pick(row, [
-      "organization 1 - title",
-      "job title",
-      "title",
-    ]);
+    const phone = pick(row, ["phone 1 - value", "phone", "mobile phone", "primary phone"]);
+    const company = pick(row, ["organization 1 - name", "organization", "company"]);
+    const role = pick(row, ["organization 1 - title", "job title", "title"]);
     const birthday = pick(row, ["birthday", "date of birth"]);
     const notes = pick(row, ["notes"]);
 

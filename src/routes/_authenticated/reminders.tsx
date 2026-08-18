@@ -35,9 +35,7 @@ function RemindersPage() {
   });
 
   const [title, setTitle] = useState("");
-  const [due, setDue] = useState<string>(
-    format(new Date(Date.now() + 86400000), "yyyy-MM-dd"),
-  );
+  const [due, setDue] = useState<string>(format(new Date(Date.now() + 86400000), "yyyy-MM-dd"));
   const [personId, setPersonId] = useState<string>("");
 
   const createMut = useMutation({
@@ -88,7 +86,9 @@ function RemindersPage() {
             onChange={(e) => setPersonId(e.target.value)}
             className="glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
           >
-            <option value="" className="bg-popover text-popover-foreground">— No person —</option>
+            <option value="" className="bg-popover text-popover-foreground">
+              — No person —
+            </option>
             {pplQuery.data?.people.map((p: any) => (
               <option key={p.id} value={p.id} className="bg-popover text-popover-foreground">
                 {p.name}
@@ -125,12 +125,13 @@ function RemindersPage() {
 
       <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-border shadow-xl">
         {q.data?.reminders.length === 0 && (
-          <p className="p-8 text-center text-sm text-muted-foreground">
-            No {tab} reminders.
-          </p>
+          <p className="p-8 text-center text-sm text-muted-foreground">No {tab} reminders.</p>
         )}
         {q.data?.reminders.map((r: any) => (
-          <div key={r.id} className="p-4.5 flex items-center justify-between gap-4 hover:bg-surface-2 transition-colors">
+          <div
+            key={r.id}
+            className="p-4.5 flex items-center justify-between gap-4 hover:bg-surface-2 transition-colors"
+          >
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{r.title}</p>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">

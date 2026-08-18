@@ -73,7 +73,8 @@ function PersonPage() {
   const [summaryResult, setSummaryResult] = useState<any>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
 
-  if (q.isLoading) return <p className="text-sm text-muted-foreground animate-pulse">Loading contact details…</p>;
+  if (q.isLoading)
+    return <p className="text-sm text-muted-foreground animate-pulse">Loading contact details…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
   if (!q.data) return null;
 
@@ -116,7 +117,9 @@ function PersonPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
                 {person.relationship_type}
               </p>
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground mt-0.5">{person.name}</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground mt-0.5">
+                {person.name}
+              </h1>
               <p className="text-xs text-muted-foreground mt-1 font-medium">
                 {[person.role, person.company].filter(Boolean).join(" · ") || "—"}
                 {person.location && ` · ${person.location}`}
@@ -158,7 +161,9 @@ function PersonPage() {
             </button>
           </div>
           {brief ? (
-            <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{brief}</div>
+            <div className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+              {brief}
+            </div>
           ) : (
             <p className="text-xs text-muted-foreground leading-relaxed">
               Generate an AI brief combining profile, timeline, notes, and open promises.
@@ -227,7 +232,11 @@ function PersonPage() {
                       {formatDistanceToNow(new Date(i.occurred_at), { addSuffix: true })}
                     </span>
                   </div>
-                  {i.summary && <p className="text-sm mt-1.5 leading-relaxed text-foreground font-medium">{i.summary}</p>}
+                  {i.summary && (
+                    <p className="text-sm mt-1.5 leading-relaxed text-foreground font-medium">
+                      {i.summary}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -261,7 +270,9 @@ function PersonPage() {
                 <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                   Summary
                 </p>
-                <p className="text-foreground mt-1 leading-relaxed font-medium">{summaryResult.summary}</p>
+                <p className="text-foreground mt-1 leading-relaxed font-medium">
+                  {summaryResult.summary}
+                </p>
               </div>
               {summaryResult.actions?.length > 0 && (
                 <div>
@@ -312,9 +323,14 @@ function PersonPage() {
           </div>
           <div className="space-y-3">
             {notes.map((n) => (
-              <div key={n.id} className="glass-panel rounded-3xl p-4.5 text-sm relative group shadow-md">
+              <div
+                key={n.id}
+                className="glass-panel rounded-3xl p-4.5 text-sm relative group shadow-md"
+              >
                 <div className="flex justify-between items-start gap-2">
-                  <p className="whitespace-pre-wrap flex-1 text-foreground font-medium text-xs leading-relaxed">{n.body}</p>
+                  <p className="whitespace-pre-wrap flex-1 text-foreground font-medium text-xs leading-relaxed">
+                    {n.body}
+                  </p>
                   <button
                     onClick={async () => {
                       await removeN({ data: { id: n.id } });
@@ -394,7 +410,9 @@ function PersonPage() {
                       {f.category}
                     </span>
                     <span className="font-semibold text-foreground">{f.key}</span>
-                    {f.value && <span className="text-muted-foreground ml-2 font-medium">{f.value}</span>}
+                    {f.value && (
+                      <span className="text-muted-foreground ml-2 font-medium">{f.value}</span>
+                    )}
                   </div>
                   <button
                     onClick={async () => {

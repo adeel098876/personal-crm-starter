@@ -17,13 +17,16 @@ function AuthPage() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession()
+    supabase.auth
+      .getSession()
       .then(({ data }) => {
         if (data.session) navigate({ to: "/today", replace: true });
       })
       .catch((err) => {
         console.warn("[Auth] Failed to reach Supabase:", err);
-        setConnectionError("Unable to reach your Supabase backend URL. Please verify VITE_SUPABASE_URL in your .env file.");
+        setConnectionError(
+          "Unable to reach your Supabase backend URL. Please verify VITE_SUPABASE_URL in your .env file.",
+        );
       });
   }, [navigate]);
 
@@ -48,7 +51,8 @@ function AuthPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       if (msg.includes("Failed to fetch") || msg.includes("ERR_NAME_NOT_RESOLVED")) {
-        const urlErr = "Cannot resolve Supabase server URL. Check your VITE_SUPABASE_URL in .env file.";
+        const urlErr =
+          "Cannot resolve Supabase server URL. Check your VITE_SUPABASE_URL in .env file.";
         setConnectionError(urlErr);
         toast.error(urlErr);
       } else {
@@ -86,22 +90,52 @@ function AuthPage() {
       <div className="w-full max-w-sm relative z-10">
         <div className="mb-10 text-center">
           <div className="flex items-center justify-center mb-3">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary drop-shadow-[0_0_15px_rgba(10,132,255,0.4)] animate-pulse">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-primary drop-shadow-[0_0_15px_rgba(10,132,255,0.4)] animate-pulse"
+            >
               <circle cx="12" cy="12" r="9" stroke="url(#authLogoGrad)" strokeWidth="2.5" />
-              <circle cx="12" cy="12" r="5" stroke="url(#authLogoGrad2)" strokeWidth="1.5" strokeDasharray="3 2" />
+              <circle
+                cx="12"
+                cy="12"
+                r="5"
+                stroke="url(#authLogoGrad2)"
+                strokeWidth="1.5"
+                strokeDasharray="3 2"
+              />
               <defs>
-                <linearGradient id="authLogoGrad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="authLogoGrad"
+                  x1="3"
+                  y1="3"
+                  x2="21"
+                  y2="21"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop stopColor="#0A84FF" />
                   <stop offset="1" stopColor="#BF5AF2" />
                 </linearGradient>
-                <linearGradient id="authLogoGrad2" x1="7" y1="7" x2="17" y2="17" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="authLogoGrad2"
+                  x1="7"
+                  y1="7"
+                  x2="17"
+                  y2="17"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop stopColor="#BF5AF2" />
                   <stop offset="1" stopColor="#30D158" />
                 </linearGradient>
               </defs>
             </svg>
           </div>
-          <h1 className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground font-extrabold text-3xl tracking-tight">Kinetic</h1>
+          <h1 className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground font-extrabold text-3xl tracking-tight">
+            Kinetic
+          </h1>
           <p className="mt-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-[0.25em]">
             Relationship OS
           </p>

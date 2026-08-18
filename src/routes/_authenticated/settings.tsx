@@ -151,8 +151,18 @@ function SettingsPage() {
               id: "light",
               label: "Light",
               icon: (
-                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                <svg
+                  className="size-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
                 </svg>
               ),
             },
@@ -160,8 +170,18 @@ function SettingsPage() {
               id: "dark",
               label: "Dark",
               icon: (
-                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                <svg
+                  className="size-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
                 </svg>
               ),
             },
@@ -169,8 +189,18 @@ function SettingsPage() {
               id: "system",
               label: "Auto System",
               icon: (
-                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  className="size-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               ),
             },
@@ -206,16 +236,17 @@ function SettingsPage() {
         </div>
 
         {!pushSupported && (
-          <p className="text-xs text-destructive">
-            This browser doesn't support web push.
-          </p>
+          <p className="text-xs text-destructive">This browser doesn't support web push.</p>
         )}
 
         {pushSupported && ios && !installedOnHome && (
           <div className="text-xs glass-panel border border-border rounded-2xl p-4 space-y-1">
-            <p className="font-semibold text-foreground">iOS requires installing Kinetic to your Home Screen first.</p>
+            <p className="font-semibold text-foreground">
+              iOS requires installing Kinetic to your Home Screen first.
+            </p>
             <p className="text-muted-foreground">
-              In Safari: Share → Add to Home Screen. Then open Kinetic from the icon and come back here.
+              In Safari: Share → Add to Home Screen. Then open Kinetic from the icon and come back
+              here.
             </p>
           </div>
         )}
@@ -257,8 +288,8 @@ function SettingsPage() {
         <div className="text-[11px] text-muted-foreground border-t border-border pt-4 space-y-1">
           <p className="font-semibold text-foreground">Coming with the native iOS app</p>
           <p className="leading-relaxed">
-            Today widgets, Live Activities, and full lock-screen surfaces for birthdays and
-            meetings require iOS native APIs (WidgetKit + ActivityKit).
+            Today widgets, Live Activities, and full lock-screen surfaces for birthdays and meetings
+            require iOS native APIs (WidgetKit + ActivityKit).
           </p>
         </div>
       </div>
@@ -268,7 +299,9 @@ function SettingsPage() {
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Data Import
         </p>
-        <p className="mt-1 text-xs text-muted-foreground mb-3 leading-relaxed">Bring in contacts from Google, Apple, or CSV spreadsheets.</p>
+        <p className="mt-1 text-xs text-muted-foreground mb-3 leading-relaxed">
+          Bring in contacts from Google, Apple, or CSV spreadsheets.
+        </p>
         <Link
           to="/import"
           className="inline-block bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all hover:opacity-90 active:scale-95 shadow-md"
@@ -283,8 +316,18 @@ function SettingsPage() {
           Keyboard shortcuts
         </p>
         <ul className="font-mono text-xs space-y-1.5 mt-2">
-          <li><kbd className="px-2 py-0.5 rounded bg-surface border border-border text-[10px]">⌘K</kbd> — command palette</li>
-          <li><kbd className="px-2 py-0.5 rounded bg-surface border border-border text-[10px]">1–5</kbd> — jump between pages</li>
+          <li>
+            <kbd className="px-2 py-0.5 rounded bg-surface border border-border text-[10px]">
+              ⌘K
+            </kbd>{" "}
+            — command palette
+          </li>
+          <li>
+            <kbd className="px-2 py-0.5 rounded bg-surface border border-border text-[10px]">
+              1–5
+            </kbd>{" "}
+            — jump between pages
+          </li>
         </ul>
       </div>
     </div>

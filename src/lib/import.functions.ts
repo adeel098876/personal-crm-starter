@@ -69,11 +69,7 @@ export const previewAndImport = createServerFn({ method: "POST" })
             .in("external_id", externalIds)
         : Promise.resolve({ data: [] as { external_id: string | null }[] }),
       emails.length
-        ? supabase
-            .from("people")
-            .select("email")
-            .eq("user_id", userId)
-            .in("email", emails)
+        ? supabase.from("people").select("email").eq("user_id", userId).in("email", emails)
         : Promise.resolve({ data: [] as { email: string | null }[] }),
     ]);
 
@@ -128,9 +124,7 @@ export const previewAndImport = createServerFn({ method: "POST" })
 
     let imported = 0;
     if (autoRows.length > 0) {
-      const { error, count } = await supabase
-        .from("people")
-        .insert(autoRows, { count: "exact" });
+      const { error, count } = await supabase.from("people").insert(autoRows, { count: "exact" });
       if (error) throw new Error(error.message);
       imported = count ?? autoRows.length;
     }

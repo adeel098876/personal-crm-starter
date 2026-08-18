@@ -155,10 +155,7 @@ export const createPerson = createServerFn({ method: "POST" })
 export const updatePerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) =>
-    z
-      .object({ id: z.string().uuid() })
-      .merge(CreatePersonInput.partial())
-      .parse(data),
+    z.object({ id: z.string().uuid() }).merge(CreatePersonInput.partial()).parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

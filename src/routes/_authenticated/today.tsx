@@ -46,9 +46,12 @@ function TodayPage() {
       const res = await fetchNudges();
       // Normalise: server may return { nudges: [...] } or the array directly
       const data = res as any;
-      const nudgeList: Array<{ person_id: string; headline: string; reason: string; suggested_action: string }> =
-        Array.isArray(data) ? data :
-        Array.isArray(data?.nudges) ? data.nudges : [];
+      const nudgeList: Array<{
+        person_id: string;
+        headline: string;
+        reason: string;
+        suggested_action: string;
+      }> = Array.isArray(data) ? data : Array.isArray(data?.nudges) ? data.nudges : [];
       return { nudges: nudgeList };
     },
     enabled: nudgesOn,
@@ -78,7 +81,8 @@ function TodayPage() {
       toast.success("Promise kept ✓");
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (e) => toast.error(`Promise update failed: ${e instanceof Error ? e.message : "Error"}`),
+    onError: (e) =>
+      toast.error(`Promise update failed: ${e instanceof Error ? e.message : "Error"}`),
   });
 
   const d = dashboard.data;
@@ -91,7 +95,9 @@ function TodayPage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             {format(new Date(), "EEEE · MMM d, yyyy")}
           </p>
-          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">Today</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
+            Today
+          </h1>
         </header>
 
         {empty && <EmptyState />}
@@ -122,7 +128,9 @@ function TodayPage() {
                       {b.kind}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-base">{b.person.name}</h3>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-base">
+                    {b.person.name}
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-1 font-medium">
                     {format(new Date(b.when), "MMM d")} — {b.kind}
                   </p>
@@ -140,7 +148,9 @@ function TodayPage() {
                       {r.daysSince == null ? "NEVER" : `${r.daysSince}d stale`}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-base">{r.person.name}</h3>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors text-base">
+                    {r.person.name}
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-1 font-medium">
                     Reach out every {r.person.target_cadence_days} days
                   </p>
@@ -184,7 +194,8 @@ function TodayPage() {
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Your AI relationship coach analyzes your cadence, open promises, and upcoming
-                birthdays — then surfaces the <strong className="text-foreground">3 most important actions</strong> to take today.
+                birthdays — then surfaces the{" "}
+                <strong className="text-foreground">3 most important actions</strong> to take today.
               </p>
               <button
                 onClick={() => setNudgesOn(true)}
@@ -199,7 +210,10 @@ function TodayPage() {
           {nudgesOn && nudges.isLoading && (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl bg-surface-2 border border-border p-4 space-y-2">
+                <div
+                  key={i}
+                  className="animate-pulse rounded-2xl bg-surface-2 border border-border p-4 space-y-2"
+                >
                   <div className="h-3 bg-border/60 rounded w-1/3" />
                   <div className="h-4 bg-border/40 rounded w-2/3" />
                   <div className="h-3 bg-border/30 rounded w-full" />
@@ -235,38 +249,42 @@ function TodayPage() {
           {nudgesOn && nudges.data && (
             <div className="space-y-3">
               {(nudges.data.nudges?.length ?? 0) === 0 && (
-                <p className="text-sm text-muted-foreground">No suggestions right now — all your relationships look healthy!</p>
+                <p className="text-sm text-muted-foreground">
+                  No suggestions right now — all your relationships look healthy!
+                </p>
               )}
               {(nudges.data.nudges ?? []).map((n: any, i: number) => {
                 const priorityStyle =
                   n.priority === "high"
                     ? "border-red-400/30 bg-red-400/5 text-red-400"
                     : n.priority === "medium"
-                    ? "border-amber-400/30 bg-amber-400/5 text-amber-400"
-                    : "border-blue-400/30 bg-blue-400/5 text-blue-400";
+                      ? "border-amber-400/30 bg-amber-400/5 text-amber-400"
+                      : "border-blue-400/30 bg-blue-400/5 text-blue-400";
                 return (
-                <button
-                  key={i}
-                  onClick={() => n.person_id && setSelectedPersonId(n.person_id)}
-                  className="w-full text-left glass-panel glass-panel-hover rounded-2xl p-4 space-y-2 transition-all duration-200 group hover:border-primary/30 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-foreground/70">{n.name}</span>
-                    {n.priority && (
-                      <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${priorityStyle}`}>
-                        {n.priority}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
-                    {n.headline}
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{n.reason}</p>
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="size-1 rounded-full bg-primary" />
-                    <p className="text-[10px] text-primary font-semibold">{n.suggested_action}</p>
-                  </div>
-                </button>
+                  <button
+                    key={i}
+                    onClick={() => n.person_id && setSelectedPersonId(n.person_id)}
+                    className="w-full text-left glass-panel glass-panel-hover rounded-2xl p-4 space-y-2 transition-all duration-200 group hover:border-primary/30 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-foreground/70">{n.name}</span>
+                      {n.priority && (
+                        <span
+                          className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${priorityStyle}`}
+                        >
+                          {n.priority}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                      {n.headline}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{n.reason}</p>
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span className="size-1 rounded-full bg-primary" />
+                      <p className="text-[10px] text-primary font-semibold">{n.suggested_action}</p>
+                    </div>
+                  </button>
                 );
               })}
             </div>
@@ -283,9 +301,14 @@ function TodayPage() {
               {d?.promises.map((p) => {
                 const personId = p.person_id || (p as any).people?.id;
                 return (
-                  <div key={p.id} className="p-4.5 flex items-center justify-between gap-4 hover:bg-surface-2 transition-colors">
+                  <div
+                    key={p.id}
+                    className="p-4.5 flex items-center justify-between gap-4 hover:bg-surface-2 transition-colors"
+                  >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-foreground font-medium truncate">{p.description}</p>
+                      <p className="text-sm text-foreground font-medium truncate">
+                        {p.description}
+                      </p>
                       <button
                         type="button"
                         onClick={() => personId && setSelectedPersonId(personId)}
@@ -300,7 +323,9 @@ function TodayPage() {
                       disabled={keepPromiseMut.isPending && keepPromiseMut.variables === p.id}
                       className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all duration-200 active:scale-95 disabled:opacity-50"
                     >
-                      {keepPromiseMut.isPending && keepPromiseMut.variables === p.id ? "Kept..." : "Kept ✓"}
+                      {keepPromiseMut.isPending && keepPromiseMut.variables === p.id
+                        ? "Kept..."
+                        : "Kept ✓"}
                     </button>
                   </div>
                 );
@@ -321,7 +346,10 @@ function TodayPage() {
               {d?.reminders.map((r) => {
                 const personId = r.person_id || (r as any).people?.id;
                 return (
-                  <div key={r.id} className="p-4 flex items-center justify-between gap-3 hover:bg-surface-2 transition-colors">
+                  <div
+                    key={r.id}
+                    className="p-4 flex items-center justify-between gap-3 hover:bg-surface-2 transition-colors"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-foreground font-semibold truncate">{r.title}</p>
                       <button

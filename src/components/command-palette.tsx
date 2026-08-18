@@ -63,11 +63,7 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput
-        placeholder="Search people or ask AI…"
-        value={query}
-        onValueChange={setQuery}
-      />
+      <CommandInput placeholder="Search people or ask AI…" value={query} onValueChange={setQuery} />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
         <CommandGroup heading="Navigate">

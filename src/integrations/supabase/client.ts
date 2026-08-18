@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
 
 function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -7,23 +7,19 @@ function createSupabaseClient() {
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_ANON_KEY ? ['SUPABASE_ANON_KEY'] : []),
+      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
+      ...(!SUPABASE_ANON_KEY ? ["SUPABASE_ANON_KEY"] : []),
     ];
-    console.warn(`[Supabase] Missing environment variables: ${missing.join(', ')}`);
+    console.warn(`[Supabase] Missing environment variables: ${missing.join(", ")}`);
   }
 
-  return createClient<Database>(
-    SUPABASE_URL || '', 
-    SUPABASE_ANON_KEY || '',
-    {
-      auth: {
-        storage: typeof window !== 'undefined' ? localStorage : undefined,
-        persistSession: true,
-        autoRefreshToken: true,
-      }
-    }
-  );
+  return createClient<Database>(SUPABASE_URL || "", SUPABASE_ANON_KEY || "", {
+    auth: {
+      storage: typeof window !== "undefined" ? localStorage : undefined,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
@@ -34,4 +30,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-
