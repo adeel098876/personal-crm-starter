@@ -16,7 +16,7 @@ export const logInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => InteractionInput.parse(data))
   .handler(async ({ data, context }) => {
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       person_id: data.person_id,
       type: data.type,
       summary: data.summary || null,
@@ -27,13 +27,15 @@ export const logInteraction = createServerFn({ method: "POST" })
     if (data.mood) payload.mood = data.mood;
     if (data.location) payload.location = data.location;
 
-    let { data: created, error } = await context.supabase
+    const { data: initialCreated, error: initialError } = await context.supabase
       .from("interactions")
       .insert(payload)
       .select()
       .single();
 
-    if (error) {
+    let created = initialCreated;
+
+    if (initialError) {
       // Fallback for minimal column schema
       const fallbackPayload = {
         person_id: data.person_id,

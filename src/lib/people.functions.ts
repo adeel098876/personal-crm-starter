@@ -203,19 +203,21 @@ export const addNote = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    let { data: note, error } = await context.supabase
+    const { data: initialNote, error: initialError } = await context.supabase
       .from("notes")
       .insert({ ...data, user_id: context.userId })
       .select()
       .single();
 
-    if (error) {
+    let note = initialNote;
+
+    if (initialError) {
       const res = await context.supabase
         .from("notes")
         .insert({ person_id: data.person_id, content: data.body, user_id: context.userId })
         .select()
         .single();
-      if (res.error) throw new Error(error.message);
+      if (res.error) throw new Error(initialError.message);
       note = res.data;
     }
     return { note };

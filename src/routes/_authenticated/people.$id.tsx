@@ -70,7 +70,17 @@ function PersonPage() {
   const [rawNotes, setRawNotes] = useState("");
   const [brief, setBrief] = useState<string | null>(null);
   const [briefBusy, setBriefBusy] = useState(false);
-  const [summaryResult, setSummaryResult] = useState<any>(null);
+  interface SummaryAction {
+    owner: string;
+    description: string;
+  }
+  interface SummaryResult {
+    summary: string;
+    actions: SummaryAction[];
+    follow_ups: Array<{ title: string; when: string }>;
+  }
+
+  const [summaryResult, setSummaryResult] = useState<SummaryResult | null>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
 
   if (q.isLoading)
@@ -180,7 +190,7 @@ function PersonPage() {
             <div className="flex gap-2.5 flex-col sm:flex-row">
               <select
                 value={intType}
-                onChange={(e) => setIntType(e.target.value as any)}
+                onChange={(e) => setIntType(e.target.value as (typeof INTERACTION_TYPES)[number])}
                 className="glass-input rounded-2xl px-4.5 py-3 text-xs capitalize focus:outline-none"
               >
                 {INTERACTION_TYPES.map((t) => (
@@ -280,7 +290,7 @@ function PersonPage() {
                     Actions
                   </p>
                   <ul className="list-disc pl-5 mt-1.5 space-y-1.5 text-foreground/90">
-                    {summaryResult.actions.map((a: any, i: number) => (
+                    {summaryResult.actions.map((a, i) => (
                       <li key={i} className="text-xs">
                         <span className="text-primary font-bold">{a.owner}:</span> {a.description}
                       </li>

@@ -83,7 +83,7 @@ function AnalyticsPage() {
               Not enough interaction data yet.
             </p>
           )}
-          {d.longestIgnored.map((r: any) => (
+          {d.longestIgnored.map((r) => (
             <Link
               key={r.person.id}
               to="/people/$id"

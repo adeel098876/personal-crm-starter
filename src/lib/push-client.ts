@@ -15,7 +15,7 @@ export function isStandalone(): boolean {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
     // iOS Safari
-    (navigator as any).standalone === true
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
 

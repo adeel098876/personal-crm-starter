@@ -4,15 +4,15 @@ Theme
 
 Apple
 
-+
+-
 
 Notion
 
-+
+-
 
 Linear
 
-+
+-
 
 Superhuman
 

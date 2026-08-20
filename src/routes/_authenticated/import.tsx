@@ -171,7 +171,7 @@ function ImportPage() {
           {history.data?.batches.length === 0 && (
             <p className="p-6 text-center text-sm text-muted-foreground">No imports yet.</p>
           )}
-          {history.data?.batches.map((b: any) => (
+          {history.data?.batches.map((b) => (
             <div
               key={b.id}
               className="p-4 flex items-center justify-between text-sm hover:bg-surface-2 transition-colors"

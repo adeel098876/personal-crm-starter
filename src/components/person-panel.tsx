@@ -18,7 +18,7 @@ import {
   diagnoseRelationship,
 } from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -41,6 +41,31 @@ const DRAFT_OCCASIONS = [
   { value: "congratulations", label: "🎉 Congrats" },
   { value: "apology", label: "💙 Apology" },
 ] as const;
+
+type DraftOccasion = (typeof DRAFT_OCCASIONS)[number]["value"];
+type DraftTone = "warm" | "professional" | "casual";
+
+interface SummaryAction {
+  owner: string;
+  description: string;
+}
+interface SummaryResult {
+  summary: string;
+  actions: SummaryAction[];
+  follow_ups: Array<{ title: string; when: string }>;
+}
+interface ConversationStarter {
+  opener: string;
+  context: string;
+  tone: "warm" | "professional" | "playful";
+}
+interface DiagnosisResult {
+  score_label: string;
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  top_action: string;
+}
 
 function initials(name: string) {
   const parts = name.split(" ").filter(Boolean);
@@ -119,10 +144,10 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
     };
   }, []);
 
-  const close = () => {
+  const close = useCallback(() => {
     setVisible(false);
     setTimeout(onClose, 320);
-  };
+  }, [onClose]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -130,7 +155,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [close]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["person", id] });
@@ -163,16 +188,16 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const [brief, setBrief] = useState<string | null>(null);
   const [briefBusy, setBriefBusy] = useState(false);
   const [rawNotesText, setRawNotesText] = useState("");
-  const [summaryResult, setSummaryResult] = useState<any>(null);
+  const [summaryResult, setSummaryResult] = useState<SummaryResult | null>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
-  const [starters, setStarters] = useState<any[] | null>(null);
+  const [starters, setStarters] = useState<ConversationStarter[] | null>(null);
   const [startersBusy, setStartersBusy] = useState(false);
-  const [draftOccasion, setDraftOccasion] = useState<string>("checkin");
-  const [draftTone, setDraftTone] = useState<string>("warm");
+  const [draftOccasion, setDraftOccasion] = useState<DraftOccasion>("checkin");
+  const [draftTone, setDraftTone] = useState<DraftTone>("warm");
   const [draftExtra, setDraftExtra] = useState("");
   const [draftText, setDraftText] = useState<string | null>(null);
   const [draftBusy, setDraftBusy] = useState(false);
-  const [diagnosis, setDiagnosis] = useState<any>(null);
+  const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
   const [diagnosisBusy, setDiagnosisBusy] = useState(false);
 
   async function generateBrief() {
@@ -224,8 +249,8 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
       const res = await fetchDraft({
         data: {
           person_id: id,
-          occasion: draftOccasion as any,
-          tone: draftTone as any,
+          occasion: draftOccasion,
+          tone: draftTone,
           extra_context: draftExtra || undefined,
         },
       });
@@ -265,8 +290,8 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   );
 
   const logMut = useMutation({
-    mutationFn: (vars: { type: string; summary: string }) =>
-      logInt({ data: { person_id: id, type: vars.type as any, summary: vars.summary } }),
+    mutationFn: (vars: { type: (typeof INTERACTION_TYPES)[number]; summary: string }) =>
+      logInt({ data: { person_id: id, type: vars.type, summary: vars.summary } }),
     onSuccess: () => {
       toast.success("Interaction logged ✓");
       setIntSummary("");
@@ -399,7 +424,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
           {q.data &&
             (() => {
               const { person, interactions, notes, fields, promises, health } = q.data;
-              const normalizedNotes = notes.map((n: any) => ({
+              const normalizedNotes = notes.map((n) => ({
                 ...n,
                 body: n.body || n.content || "",
               }));
@@ -443,7 +468,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                       },
                       {
                         label: "Open promises",
-                        value: String(promises.filter((p: any) => p.status === "open").length),
+                        value: String(promises.filter((p) => p.status === "open").length),
                       },
                     ].map((s) => (
                       <div key={s.label} className="glass-panel rounded-2xl p-3.5 shadow-md">
@@ -489,7 +514,9 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                           <div className="flex gap-2">
                             <select
                               value={intType}
-                              onChange={(e) => setIntType(e.target.value as any)}
+                              onChange={(e) =>
+                                setIntType(e.target.value as (typeof INTERACTION_TYPES)[number])
+                              }
                               className="glass-input rounded-xl px-3 py-2.5 text-xs capitalize focus:outline-none flex-shrink-0"
                             >
                               {INTERACTION_TYPES.map((t) => (
@@ -551,7 +578,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                             </p>
                           ) : (
                             <div className="border-l border-border ml-2 pl-4 space-y-4 py-1">
-                              {interactions.slice(0, 3).map((i: any) => (
+                              {interactions.slice(0, 3).map((i) => (
                                 <div key={i.id} className="relative">
                                   <div className="absolute -left-[21px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-background" />
                                   <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
@@ -602,7 +629,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                             </button>
                           </div>
                           <div className="divide-y divide-border">
-                            {promises.map((p: any) => (
+                            {promises.map((p) => (
                               <div
                                 key={p.id}
                                 className="py-2.5 flex items-center justify-between gap-2"
@@ -663,7 +690,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                         </p>
                       ) : (
                         <div className="border-l border-border ml-3 pl-5 space-y-5 py-1">
-                          {interactions.map((i: any) => (
+                          {interactions.map((i) => (
                             <div key={i.id} className="relative">
                               <div className="absolute -left-[27px] top-1.5 size-2 rounded-full bg-primary ring-4 ring-background" />
                               <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
@@ -752,7 +779,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                                   Action Items
                                 </p>
                                 <ul className="list-disc pl-4 mt-1 space-y-1 text-foreground/90">
-                                  {summaryResult.actions.map((a: any, idx: number) => (
+                                  {summaryResult.actions.map((a, idx) => (
                                     <li key={idx}>
                                       <span className="text-primary font-bold">{a.owner}:</span>{" "}
                                       {a.description}
@@ -767,7 +794,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
 
                       {/* Saved Notes */}
                       <div className="space-y-3">
-                        {normalizedNotes.map((n: any) => (
+                        {normalizedNotes.map((n) => (
                           <div
                             key={n.id}
                             className="glass-panel rounded-2xl p-4 relative shadow-md"
@@ -862,7 +889,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                         </button>
                         {starters && starters.length > 0 && (
                           <div className="border-t border-border/50 pt-3 space-y-3">
-                            {starters.map((s: any, i: number) => (
+                            {starters.map((s, i) => (
                               <div key={i} className="glass-panel rounded-xl p-3 space-y-1.5">
                                 <div className="flex items-center justify-between">
                                   <span
@@ -1104,7 +1131,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                         </button>
                       </div>
                       <div className="divide-y divide-border">
-                        {fields.map((f: any) => (
+                        {fields.map((f) => (
                           <div
                             key={f.id}
                             className="flex justify-between items-baseline py-3 text-xs hover:bg-surface-2 rounded px-1 transition-colors"

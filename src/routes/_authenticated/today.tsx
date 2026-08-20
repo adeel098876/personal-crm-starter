@@ -25,33 +25,30 @@ function TodayPage() {
   const [nudgesOn, setNudgesOn] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
 
+  interface NudgeItem {
+    person_id: string;
+    name?: string;
+    headline: string;
+    reason: string;
+    suggested_action: string;
+    priority?: string;
+  }
+
   const dashboard = useQuery({
     queryKey: ["dashboard"],
-    queryFn: async () => {
-      const res = await fetchDashboard();
-      return res as {
-        birthdays: Array<{ person: any; when: string; kind: string }>;
-        reachOut: Array<{ person: any; score: number; daysSince: number | null }>;
-        reminders: any[];
-        promises: any[];
-        totalPeople: number;
-        scoresById: Record<string, number>;
-      };
-    },
+    queryFn: () => fetchDashboard(),
   });
 
   const nudges = useQuery({
     queryKey: ["nudges"],
     queryFn: async () => {
       const res = await fetchNudges();
-      // Normalise: server may return { nudges: [...] } or the array directly
-      const data = res as any;
-      const nudgeList: Array<{
-        person_id: string;
-        headline: string;
-        reason: string;
-        suggested_action: string;
-      }> = Array.isArray(data) ? data : Array.isArray(data?.nudges) ? data.nudges : [];
+      const data = res as { nudges?: NudgeItem[] } | NudgeItem[];
+      const nudgeList: NudgeItem[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.nudges)
+          ? data.nudges
+          : [];
       return { nudges: nudgeList };
     },
     enabled: nudgesOn,
@@ -253,7 +250,7 @@ function TodayPage() {
                   No suggestions right now — all your relationships look healthy!
                 </p>
               )}
-              {(nudges.data.nudges ?? []).map((n: any, i: number) => {
+              {(nudges.data.nudges ?? []).map((n, i) => {
                 const priorityStyle =
                   n.priority === "high"
                     ? "border-red-400/30 bg-red-400/5 text-red-400"
@@ -299,7 +296,8 @@ function TodayPage() {
           ) : (
             <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-border shadow-xl">
               {d?.promises.map((p) => {
-                const personId = p.person_id || (p as any).people?.id;
+                const personRef = Array.isArray(p.people) ? p.people[0] : p.people;
+                const personId = p.person_id || personRef?.id;
                 return (
                   <div
                     key={p.id}
@@ -314,7 +312,7 @@ function TodayPage() {
                         onClick={() => personId && setSelectedPersonId(personId)}
                         className="text-xs text-muted-foreground mt-1 font-medium hover:text-primary transition-colors text-left"
                       >
-                        {(p as any).people?.name ?? "—"}
+                        {personRef?.name ?? "—"}
                         {p.due_at && ` · due ${format(new Date(p.due_at), "MMM d")}`}
                       </button>
                     </div>
@@ -344,7 +342,8 @@ function TodayPage() {
           ) : (
             <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-border shadow-xl">
               {d?.reminders.map((r) => {
-                const personId = r.person_id || (r as any).people?.id;
+                const personRef = Array.isArray(r.people) ? r.people[0] : r.people;
+                const personId = r.person_id || personRef?.id;
                 return (
                   <div
                     key={r.id}
@@ -357,8 +356,7 @@ function TodayPage() {
                         onClick={() => personId && setSelectedPersonId(personId)}
                         className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1 hover:text-primary transition-colors text-left"
                       >
-                        {(r as any).people?.name ?? "General"} ·{" "}
-                        {format(new Date(r.due_at), "MMM d")}
+                        {personRef?.name ?? "General"} · {format(new Date(r.due_at), "MMM d")}
                       </button>
                     </div>
                     <div className="flex gap-1.5 shrink-0">

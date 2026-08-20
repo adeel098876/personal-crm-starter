@@ -80,7 +80,13 @@ export const createPromise = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const payload: any = {
+    const payload: {
+      person_id: string;
+      description: string;
+      user_id: string;
+      status: string;
+      due_at?: string | null;
+    } = {
       person_id: data.person_id,
       description: data.description,
       user_id: context.userId,

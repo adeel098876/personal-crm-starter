@@ -148,7 +148,7 @@ function SettingsPage() {
         <div className="grid grid-cols-3 gap-3 pt-1">
           {[
             {
-              id: "light",
+              id: "light" as const,
               label: "Light",
               icon: (
                 <svg
@@ -167,7 +167,7 @@ function SettingsPage() {
               ),
             },
             {
-              id: "dark",
+              id: "dark" as const,
               label: "Dark",
               icon: (
                 <svg
@@ -186,7 +186,7 @@ function SettingsPage() {
               ),
             },
             {
-              id: "system",
+              id: "system" as const,
               label: "Auto System",
               icon: (
                 <svg
@@ -209,7 +209,7 @@ function SettingsPage() {
             return (
               <button
                 key={t.id}
-                onClick={() => setTheme(t.id as any)}
+                onClick={() => setTheme(t.id)}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border transition-all duration-200 ${
                   active
                     ? "border-primary/50 bg-primary/10 text-primary font-bold shadow-md scale-[1.02]"

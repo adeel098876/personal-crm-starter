@@ -47,9 +47,18 @@ export const Route = createFileRoute("/api/public/dispatch-reminders")({
             .in("id", userIds),
         ]);
 
-        const prefById = new Map((profiles ?? []).map((p) => [p.id, p]));
+        interface ProfilePref {
+          id: string;
+          push_enabled?: boolean | null;
+          push_quiet_hours?: {
+            start_hour?: number | string;
+            end_hour?: number | string;
+          } | null;
+        }
 
-        function inQuietHours(pref: any): boolean {
+        const prefById = new Map((profiles ?? []).map((p) => [p.id, p as ProfilePref]));
+
+        function inQuietHours(pref?: ProfilePref | null): boolean {
           if (!pref || pref.push_enabled === false) return true;
           const q = pref.push_quiet_hours ?? {};
           const startH = Number(q.start_hour ?? 22);
@@ -67,7 +76,7 @@ export const Route = createFileRoute("/api/public/dispatch-reminders")({
         for (const sub of subs ?? []) {
           const pref = prefById.get(sub.user_id);
           if (pref && (pref.push_enabled === false || inQuietHours(pref))) continue;
-          const result = await sendWebPush(sub as any, keys);
+          const result = await sendWebPush(sub, keys);
           if (result.status === 404 || result.status === 410) {
             deadEndpoints.push(sub.endpoint);
           } else if (result.status >= 200 && result.status < 300) {

@@ -18,7 +18,7 @@ stay_in_touch_every
 
 notes
 
------------
+---
 
 promises
 
@@ -32,4 +32,4 @@ status
 
 due_date
 
------------
+---

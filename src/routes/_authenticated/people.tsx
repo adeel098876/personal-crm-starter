@@ -26,7 +26,12 @@ function PeoplePage() {
 
   const createMut = useMutation({
     mutationFn: (input: { name: string; relationship_type: string; target_cadence_days: number }) =>
-      add({ data: input as any }),
+      add({
+        data: {
+          ...input,
+          relationship_type: input.relationship_type as "friend",
+        },
+      }),
     onSuccess: () => {
       toast.success("Person added ✓");
       setOpenCreate(false);
@@ -75,7 +80,7 @@ function PeoplePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {people.data?.people.map((p: any) => (
+              {people.data?.people.map((p) => (
                 <tr
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}

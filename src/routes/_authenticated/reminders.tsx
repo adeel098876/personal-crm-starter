@@ -89,7 +89,7 @@ function RemindersPage() {
             <option value="" className="bg-popover text-popover-foreground">
               — No person —
             </option>
-            {pplQuery.data?.people.map((p: any) => (
+            {pplQuery.data?.people.map((p) => (
               <option key={p.id} value={p.id} className="bg-popover text-popover-foreground">
                 {p.name}
               </option>
@@ -127,7 +127,7 @@ function RemindersPage() {
         {q.data?.reminders.length === 0 && (
           <p className="p-8 text-center text-sm text-muted-foreground">No {tab} reminders.</p>
         )}
-        {q.data?.reminders.map((r: any) => (
+        {q.data?.reminders.map((r) => (
           <div
             key={r.id}
             className="p-4.5 flex items-center justify-between gap-4 hover:bg-surface-2 transition-colors"
