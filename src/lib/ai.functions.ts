@@ -344,7 +344,7 @@ export const getConversationStarters = createServerFn({ method: "POST" })
 
     try {
       const parsed = JSON.parse(raw) as {
-        starters: Array<{ opener: string; context: string; tone: string }>;
+        starters: Array<{ opener: string; context: string; tone: "warm" | "professional" | "playful" }>;
       };
       return { starters: parsed.starters ?? [] };
     } catch {

@@ -426,7 +426,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
               const { person, interactions, notes, fields, promises, health } = q.data;
               const normalizedNotes = notes.map((n) => ({
                 ...n,
-                body: n.body || n.content || "",
+                body: n.body || "",
               }));
 
               return (
@@ -924,7 +924,9 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                             </p>
                             <select
                               value={draftOccasion}
-                              onChange={(e) => setDraftOccasion(e.target.value)}
+                              onChange={(e) =>
+                                setDraftOccasion(e.target.value as DraftOccasion)
+                              }
                               className="w-full glass-input rounded-xl px-3 py-2 text-xs focus:outline-none"
                             >
                               {DRAFT_OCCASIONS.map((o) => (
@@ -944,7 +946,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                             </p>
                             <select
                               value={draftTone}
-                              onChange={(e) => setDraftTone(e.target.value)}
+                              onChange={(e) => setDraftTone(e.target.value as DraftTone)}
                               className="w-full glass-input rounded-xl px-3 py-2 text-xs focus:outline-none"
                             >
                               <option value="warm" className="bg-popover">
