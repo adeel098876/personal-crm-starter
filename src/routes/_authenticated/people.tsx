@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPerson, listPeople } from "@/lib/people.functions";
 import { PersonPanel } from "@/components/person-panel";
-import { useState } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/people")({
   component: PeoplePage,
@@ -25,11 +26,17 @@ function PeoplePage() {
   });
 
   const createMut = useMutation({
-    mutationFn: (input: { name: string; relationship_type: string; target_cadence_days: number }) =>
+    mutationFn: (input: {
+      name: string;
+      relationship_type: string;
+      target_cadence_days: number;
+      birthday?: string | null;
+    }) =>
       add({
         data: {
           ...input,
           relationship_type: input.relationship_type as "friend",
+          birthday: input.birthday || null,
         },
       }),
     onSuccess: () => {
@@ -53,8 +60,9 @@ function PeoplePage() {
           </h1>
         </div>
         <button
+          type="button"
           onClick={() => setOpenCreate(true)}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-lg"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-lg cursor-pointer"
         >
           Add person
         </button>
@@ -135,20 +143,47 @@ function CreatePersonDialog({
   busy,
 }: {
   onClose: () => void;
-  onSubmit: (v: { name: string; relationship_type: string; target_cadence_days: number }) => void;
+  onSubmit: (v: {
+    name: string;
+    relationship_type: string;
+    target_cadence_days: number;
+    birthday?: string | null;
+  }) => void;
   busy: boolean;
 }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("friend");
   const [cadence, setCadence] = useState(30);
+  const [birthdayDate, setBirthdayDate] = useState<Date | undefined>();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!name.trim()) return;
-          onSubmit({ name: name.trim(), relationship_type: type, target_cadence_days: cadence });
+          if (!name.trim()) {
+            toast.error("Please enter a name");
+            return;
+          }
+          onSubmit({
+            name: name.trim(),
+            relationship_type: type,
+            target_cadence_days: cadence,
+            birthday: birthdayDate ? format(birthdayDate, "yyyy-MM-dd") : null,
+          });
         }}
         className="glass-panel w-full max-w-md p-6.5 space-y-5 rounded-3xl shadow-2xl"
       >
@@ -207,18 +242,30 @@ function CreatePersonDialog({
             />
           </div>
         </div>
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+            Birthday (optional)
+          </label>
+          <div className="mt-1.5">
+            <DatePicker
+              date={birthdayDate}
+              onDateChange={setBirthdayDate}
+              placeholder="Pick birthday (optional)"
+            />
+          </div>
+        </div>
         <div className="flex justify-end gap-2.5 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95"
+            className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
+            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {busy ? "Adding…" : "Add"}
           </button>

@@ -135,12 +135,25 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const orig = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const origOverflow = document.body.style.overflow;
+    const origPosition = document.body.style.position;
+    const origTop = document.body.style.top;
+    const origWidth = document.body.style.width;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
     document.body.style.overflow = "hidden";
+
     const t = requestAnimationFrame(() => setVisible(true));
     return () => {
       cancelAnimationFrame(t);
-      document.body.style.overflow = orig;
+      document.body.style.position = origPosition;
+      document.body.style.top = origTop;
+      document.body.style.width = origWidth;
+      document.body.style.overflow = origOverflow;
+      window.scrollTo({ top: scrollY, behavior: "instant" });
     };
   }, []);
 
@@ -924,9 +937,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                             </p>
                             <select
                               value={draftOccasion}
-                              onChange={(e) =>
-                                setDraftOccasion(e.target.value as DraftOccasion)
-                              }
+                              onChange={(e) => setDraftOccasion(e.target.value as DraftOccasion)}
                               className="w-full glass-input rounded-xl px-3 py-2 text-xs focus:outline-none"
                             >
                               {DRAFT_OCCASIONS.map((o) => (

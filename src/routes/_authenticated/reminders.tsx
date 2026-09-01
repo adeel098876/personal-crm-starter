@@ -8,8 +8,9 @@ import {
   snoozeReminder,
 } from "@/lib/reminders.functions";
 import { listPeople } from "@/lib/people.functions";
-import { useState } from "react";
-import { format } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useState, useEffect } from "react";
+import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/reminders")({
@@ -25,6 +26,8 @@ function RemindersPage() {
   const people = useServerFn(listPeople);
 
   const [tab, setTab] = useState<"open" | "done">("open");
+  const [openCreate, setOpenCreate] = useState(false);
+
   const q = useQuery({
     queryKey: ["reminders", tab],
     queryFn: () => list({ data: { status: tab } }),
@@ -35,51 +38,88 @@ function RemindersPage() {
   });
 
   const [title, setTitle] = useState("");
-  const [due, setDue] = useState<string>(format(new Date(Date.now() + 86400000), "yyyy-MM-dd"));
+  const [dueDate, setDueDate] = useState<Date | undefined>(addDays(new Date(), 1));
   const [personId, setPersonId] = useState<string>("");
 
   const createMut = useMutation({
-    mutationFn: () =>
-      create({
+    mutationFn: (vars?: { title: string; due: Date; person_id: string }) => {
+      const t = vars?.title ?? title;
+      const d = vars?.due ?? dueDate;
+      const p = vars?.person_id ?? personId;
+
+      if (!t.trim()) {
+        throw new Error("Please enter what to remember");
+      }
+      if (!d || isNaN(d.getTime())) {
+        throw new Error("Please select a valid due date");
+      }
+
+      return create({
         data: {
-          title,
-          due_at: new Date(due).toISOString(),
-          person_id: personId || null,
+          title: t.trim(),
+          due_at: d.toISOString(),
+          person_id: p || null,
           kind: "custom",
         },
-      }),
+      });
+    },
     onSuccess: () => {
       setTitle("");
-      toast.success("Reminder added");
+      setDueDate(addDays(new Date(), 1));
+      setPersonId("");
+      setOpenCreate(false);
+      toast.success("Reminder added ✓");
       qc.invalidateQueries({ queryKey: ["reminders"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to add reminder"),
   });
+
+  const handleQuickAdd = () => {
+    if (!title.trim()) {
+      toast.error("Please enter what to remember");
+      return;
+    }
+    createMut.mutate();
+  };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <header>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
-          Cadence
-        </p>
-        <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
-          Reminders
-        </h1>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+            Cadence
+          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-muted-foreground">
+            Reminders
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpenCreate(true)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-lg cursor-pointer"
+        >
+          Add reminder
+        </button>
       </header>
 
+      {/* Quick Add Bar */}
       <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input
             placeholder="What to remember…"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleQuickAdd();
+            }}
             className="md:col-span-2 glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
           />
-          <input
-            type="date"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-            className="glass-input rounded-2xl px-4 py-2.5 text-xs font-mono text-foreground focus:outline-none"
+          <DatePicker
+            date={dueDate}
+            onDateChange={setDueDate}
+            placeholder="Pick due date"
+            className="w-full"
           />
           <select
             value={personId}
@@ -98,11 +138,12 @@ function RemindersPage() {
         </div>
         <div className="flex justify-end pt-1">
           <button
-            onClick={() => title.trim() && createMut.mutate()}
+            type="button"
+            onClick={handleQuickAdd}
             disabled={createMut.isPending}
-            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-all hover:opacity-90 active:scale-95 shadow-md"
+            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-all hover:opacity-90 active:scale-95 shadow-md cursor-pointer"
           >
-            Add reminder
+            {createMut.isPending ? "Adding…" : "Add reminder"}
           </button>
         </div>
       </div>
@@ -111,8 +152,9 @@ function RemindersPage() {
         {(["open", "done"] as const).map((t) => (
           <button
             key={t}
+            type="button"
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-full border transition-all duration-200 ${
+            className={`px-4 py-2 rounded-full border transition-all duration-200 cursor-pointer ${
               tab === t
                 ? "border-primary/40 bg-primary/10 text-primary font-bold shadow-sm"
                 : "border-border bg-surface text-muted-foreground hover:text-foreground"
@@ -141,21 +183,33 @@ function RemindersPage() {
             {tab === "open" && (
               <div className="flex gap-2 shrink-0">
                 <button
+                  type="button"
                   onClick={async () => {
-                    await done({ data: { id: r.id } });
-                    qc.invalidateQueries({ queryKey: ["reminders"] });
-                    qc.invalidateQueries({ queryKey: ["dashboard"] });
+                    try {
+                      await done({ data: { id: r.id } });
+                      toast.success("Reminder marked done ✓");
+                      qc.invalidateQueries({ queryKey: ["reminders"] });
+                      qc.invalidateQueries({ queryKey: ["dashboard"] });
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed to complete");
+                    }
                   }}
-                  className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all active:scale-95"
+                  className="text-[9px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all active:scale-95 cursor-pointer"
                 >
                   Done
                 </button>
                 <button
+                  type="button"
                   onClick={async () => {
-                    await snooze({ data: { id: r.id, days: 7 } });
-                    qc.invalidateQueries({ queryKey: ["reminders"] });
+                    try {
+                      await snooze({ data: { id: r.id, days: 7 } });
+                      toast.success("Snoozed for 7 days");
+                      qc.invalidateQueries({ queryKey: ["reminders"] });
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed to snooze");
+                    }
                   }}
-                  className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground border border-border bg-surface rounded-full px-3.5 py-1.5 hover:bg-surface-2 hover:text-foreground transition-all active:scale-95"
+                  className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground border border-border bg-surface rounded-full px-3.5 py-1.5 hover:bg-surface-2 hover:text-foreground transition-all active:scale-95 cursor-pointer"
                 >
                   +7d
                 </button>
@@ -164,6 +218,134 @@ function RemindersPage() {
           </div>
         ))}
       </div>
+
+      {/* Create Reminder Dialog Modal */}
+      {openCreate && (
+        <CreateReminderDialog
+          people={pplQuery.data?.people ?? []}
+          onClose={() => setOpenCreate(false)}
+          onSubmit={(vars) => createMut.mutate(vars)}
+          busy={createMut.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateReminderDialog({
+  people,
+  onClose,
+  onSubmit,
+  busy,
+}: {
+  people: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onSubmit: (v: { title: string; due: Date; person_id: string }) => void;
+  busy: boolean;
+}) {
+  const [dialogTitle, setDialogTitle] = useState("");
+  const [dialogDueDate, setDialogDueDate] = useState<Date | undefined>(addDays(new Date(), 1));
+  const [dialogPersonId, setDialogPersonId] = useState("");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dialogTitle.trim()) {
+      toast.error("Please enter what to remember");
+      return;
+    }
+    if (!dialogDueDate) {
+      toast.error("Please select a due date");
+      return;
+    }
+    onSubmit({
+      title: dialogTitle.trim(),
+      due: dialogDueDate,
+      person_id: dialogPersonId,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="glass-panel w-full max-w-md p-6.5 space-y-5 rounded-3xl shadow-2xl"
+      >
+        <h2 className="text-lg font-bold text-foreground pl-1">New Reminder</h2>
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+            What to remember
+          </label>
+          <input
+            autoFocus
+            placeholder="e.g. Follow up on design review"
+            value={dialogTitle}
+            onChange={(e) => setDialogTitle(e.target.value)}
+            className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+              Due Date
+            </label>
+            <div className="mt-1.5">
+              <DatePicker
+                date={dialogDueDate}
+                onDateChange={setDialogDueDate}
+                placeholder="Pick due date"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+              Person (optional)
+            </label>
+            <select
+              value={dialogPersonId}
+              onChange={(e) => setDialogPersonId(e.target.value)}
+              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
+            >
+              <option value="" className="bg-popover text-popover-foreground">
+                — No person —
+              </option>
+              {people.map((p) => (
+                <option key={p.id} value={p.id} className="bg-popover text-popover-foreground">
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            {busy ? "Creating…" : "Create"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

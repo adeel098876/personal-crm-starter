@@ -116,6 +116,7 @@ function TodayPage() {
               {d?.birthdays.map((b) => (
                 <button
                   key={b.person.id + b.kind}
+                  type="button"
                   onClick={() => setSelectedPersonId(b.person.id)}
                   className="glass-panel glass-panel-hover p-5 rounded-3xl text-left block w-full group cursor-pointer"
                 >
@@ -136,6 +137,7 @@ function TodayPage() {
               {d?.reachOut.slice(0, 4).map((r) => (
                 <button
                   key={r.person.id}
+                  type="button"
                   onClick={() => setSelectedPersonId(r.person.id)}
                   className="glass-panel glass-panel-hover p-5 rounded-3xl text-left block w-full group cursor-pointer"
                 >
@@ -260,6 +262,7 @@ function TodayPage() {
                 return (
                   <button
                     key={i}
+                    type="button"
                     onClick={() => n.person_id && setSelectedPersonId(n.person_id)}
                     className="w-full text-left glass-panel glass-panel-hover rounded-2xl p-4 space-y-2 transition-all duration-200 group hover:border-primary/30 cursor-pointer"
                   >
