@@ -18,7 +18,8 @@ import {
   diagnoseRelationship,
 } from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
-import { useState, useEffect, useCallback } from "react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -132,43 +133,7 @@ function formatAgo(dateStr?: string) {
 
 export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const qc = useQueryClient();
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const scrollY = window.scrollY;
-    const origOverflow = document.body.style.overflow;
-    const origPosition = document.body.style.position;
-    const origTop = document.body.style.top;
-    const origWidth = document.body.style.width;
-
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
-
-    const t = requestAnimationFrame(() => setVisible(true));
-    return () => {
-      cancelAnimationFrame(t);
-      document.body.style.position = origPosition;
-      document.body.style.top = origTop;
-      document.body.style.width = origWidth;
-      document.body.style.overflow = origOverflow;
-      window.scrollTo({ top: scrollY, behavior: "instant" });
-    };
-  }, []);
-
-  const close = useCallback(() => {
-    setVisible(false);
-    setTimeout(onClose, 320);
-  }, [onClose]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [close]);
+  const close = useCallback(onClose, [onClose]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["person", id] });
@@ -395,22 +360,18 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
   const TABS = ["overview", "timeline", "notes", "ai", "details"] as const;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-        style={{ opacity: visible ? 1 : 0 }}
-        onClick={close}
-      />
-
-      {/* Slide-over */}
-      <div
-        className="fixed inset-y-0 right-0 z-50 w-full max-w-lg flex flex-col shadow-2xl transition-transform duration-300 ease-out"
+    <Sheet
+      open
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="p-0 w-full max-w-lg flex flex-col h-full border-l border-border [&>button:first-child]:hidden"
         style={{
-          transform: visible ? "translateX(0)" : "translateX(100%)",
           background: "var(--glass-bg, rgba(10,10,15,0.93))",
           backdropFilter: "blur(40px) saturate(180%)",
-          borderLeft: "1px solid var(--border)",
         }}
       >
         {/* Header */}
@@ -419,15 +380,16 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
             Contact Details & Stats
           </p>
           <button
+            type="button"
             onClick={close}
-            className="size-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-sm"
+            className="size-7 rounded-full bg-surface-2 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-sm cursor-pointer"
           >
             ×
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
           {q.isLoading && (
             <div className="flex items-center justify-center h-32">
               <div className="size-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -1187,7 +1149,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
               );
             })()}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

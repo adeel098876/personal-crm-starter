@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPerson, listPeople } from "@/lib/people.functions";
 import { PersonPanel } from "@/components/person-panel";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -137,6 +142,32 @@ function PeoplePage() {
   );
 }
 
+const RELATIONSHIP_TYPES = [
+  "family",
+  "friend",
+  "partner",
+  "coworker",
+  "manager",
+  "client",
+  "mentor",
+  "mentee",
+  "investor",
+  "acquaintance",
+  "other",
+] as const;
+
+const createPersonSchema = z.object({
+  name: z.string().trim().min(1, "Please enter a name"),
+  relationship_type: z.enum(RELATIONSHIP_TYPES),
+  target_cadence_days: z.coerce
+    .number()
+    .min(1, "Cadence must be at least 1 day")
+    .max(365, "Cadence cannot exceed 365 days"),
+  birthday: z.date().optional(),
+});
+
+type CreatePersonFormValues = z.infer<typeof createPersonSchema>;
+
 function CreatePersonDialog({
   onClose,
   onSubmit,
@@ -151,126 +182,149 @@ function CreatePersonDialog({
   }) => void;
   busy: boolean;
 }) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("friend");
-  const [cadence, setCadence] = useState(30);
-  const [birthdayDate, setBirthdayDate] = useState<Date | undefined>();
+  const form = useForm<CreatePersonFormValues>({
+    resolver: zodResolver(createPersonSchema),
+    defaultValues: {
+      name: "",
+      relationship_type: "friend",
+      target_cadence_days: 30,
+      birthday: undefined,
+    },
+  });
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  const handleFormSubmit = form.handleSubmit(
+    (values) => {
+      onSubmit({
+        name: values.name.trim(),
+        relationship_type: values.relationship_type,
+        target_cadence_days: values.target_cadence_days,
+        birthday: values.birthday ? format(values.birthday, "yyyy-MM-dd") : null,
+      });
+    },
+    (errors) => {
+      const firstError = Object.values(errors)[0];
+      if (firstError?.message) {
+        toast.error(String(firstError.message));
+      }
+    },
+  );
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!name.trim()) {
-            toast.error("Please enter a name");
-            return;
-          }
-          onSubmit({
-            name: name.trim(),
-            relationship_type: type,
-            target_cadence_days: cadence,
-            birthday: birthdayDate ? format(birthdayDate, "yyyy-MM-dd") : null,
-          });
-        }}
-        className="glass-panel w-full max-w-md p-6.5 space-y-5 rounded-3xl shadow-2xl"
-      >
-        <h2 className="text-lg font-bold text-foreground pl-1">Add someone</h2>
-        <div>
-          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-            Name
-          </label>
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-              Relationship
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none capitalize"
-            >
-              {[
-                "family",
-                "friend",
-                "partner",
-                "coworker",
-                "manager",
-                "client",
-                "mentor",
-                "mentee",
-                "investor",
-                "acquaintance",
-                "other",
-              ].map((t) => (
-                <option key={t} value={t} className="bg-popover text-popover-foreground">
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-              Cadence (days)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={365}
-              value={cadence}
-              onChange={(e) => setCadence(parseInt(e.target.value || "30", 10))}
-              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground font-mono focus:outline-none"
+      <DialogContent className="glass-panel max-w-md p-6.5 rounded-3xl shadow-2xl border-border bg-transparent backdrop-blur-xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold text-foreground pl-1">Add someone</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={handleFormSubmit} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                    Name
+                  </FormLabel>
+                  <FormControl>
+                    <input
+                      autoFocus
+                      {...field}
+                      className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        <div>
-          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-            Birthday (optional)
-          </label>
-          <div className="mt-1.5">
-            <DatePicker
-              date={birthdayDate}
-              onDateChange={setBirthdayDate}
-              placeholder="Pick birthday (optional)"
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="relationship_type"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Relationship
+                    </FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none capitalize"
+                      >
+                        {RELATIONSHIP_TYPES.map((t) => (
+                          <option key={t} value={t} className="bg-popover text-popover-foreground">
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="target_cadence_days"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Cadence (days)
+                    </FormLabel>
+                    <FormControl>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value || "30", 10))}
+                        className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground font-mono focus:outline-none"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="birthday"
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                    Birthday (optional)
+                  </FormLabel>
+                  <FormControl>
+                    <div className="mt-1.5">
+                      <DatePicker
+                        date={field.value}
+                        onDateChange={field.onChange}
+                        placeholder="Pick birthday (optional)"
+                      />
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2.5 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-          >
-            {busy ? "Adding…" : "Add"}
-          </button>
-        </div>
-      </form>
-    </div>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {busy ? "Adding…" : "Add"}
+              </button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

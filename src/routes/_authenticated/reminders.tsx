@@ -9,7 +9,12 @@ import {
 } from "@/lib/reminders.functions";
 import { listPeople } from "@/lib/people.functions";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -232,6 +237,17 @@ function RemindersPage() {
   );
 }
 
+const createReminderSchema = z.object({
+  title: z.string().trim().min(1, "Please enter what to remember"),
+  due: z.date({
+    required_error: "Please select a due date",
+    invalid_type_error: "Please select a due date",
+  }),
+  person_id: z.string().default(""),
+});
+
+type CreateReminderFormValues = z.infer<typeof createReminderSchema>;
+
 function CreateReminderDialog({
   people,
   onClose,
@@ -243,109 +259,134 @@ function CreateReminderDialog({
   onSubmit: (v: { title: string; due: Date; person_id: string }) => void;
   busy: boolean;
 }) {
-  const [dialogTitle, setDialogTitle] = useState("");
-  const [dialogDueDate, setDialogDueDate] = useState<Date | undefined>(addDays(new Date(), 1));
-  const [dialogPersonId, setDialogPersonId] = useState("");
+  const form = useForm<CreateReminderFormValues>({
+    resolver: zodResolver(createReminderSchema),
+    defaultValues: {
+      title: "",
+      due: addDays(new Date(), 1),
+      person_id: "",
+    },
+  });
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!dialogTitle.trim()) {
-      toast.error("Please enter what to remember");
-      return;
-    }
-    if (!dialogDueDate) {
-      toast.error("Please select a due date");
-      return;
-    }
-    onSubmit({
-      title: dialogTitle.trim(),
-      due: dialogDueDate,
-      person_id: dialogPersonId,
-    });
-  };
+  const handleFormSubmit = form.handleSubmit(
+    (values) => {
+      onSubmit({
+        title: values.title.trim(),
+        due: values.due,
+        person_id: values.person_id,
+      });
+    },
+    (errors) => {
+      const firstError = Object.values(errors)[0];
+      if (firstError?.message) {
+        toast.error(String(firstError.message));
+      }
+    },
+  );
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <form
-        onSubmit={handleSubmit}
-        className="glass-panel w-full max-w-md p-6.5 space-y-5 rounded-3xl shadow-2xl"
-      >
-        <h2 className="text-lg font-bold text-foreground pl-1">New Reminder</h2>
-        <div>
-          <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-            What to remember
-          </label>
-          <input
-            autoFocus
-            placeholder="e.g. Follow up on design review"
-            value={dialogTitle}
-            onChange={(e) => setDialogTitle(e.target.value)}
-            className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-              Due Date
-            </label>
-            <div className="mt-1.5">
-              <DatePicker
-                date={dialogDueDate}
-                onDateChange={setDialogDueDate}
-                placeholder="Pick due date"
+      <DialogContent className="glass-panel max-w-md p-6.5 rounded-3xl shadow-2xl border-border bg-transparent backdrop-blur-xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold text-foreground pl-1">New Reminder</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={handleFormSubmit} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                    What to remember
+                  </FormLabel>
+                  <FormControl>
+                    <input
+                      autoFocus
+                      placeholder="e.g. Follow up on design review"
+                      {...field}
+                      className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="due"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Due Date
+                    </FormLabel>
+                    <FormControl>
+                      <div className="mt-1.5">
+                        <DatePicker
+                          date={field.value}
+                          onDateChange={field.onChange}
+                          placeholder="Pick due date"
+                        />
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="person_id"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Person (optional)
+                    </FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
+                      >
+                        <option value="" className="bg-popover text-popover-foreground">
+                          — No person —
+                        </option>
+                        {people.map((p) => (
+                          <option
+                            key={p.id}
+                            value={p.id}
+                            className="bg-popover text-popover-foreground"
+                          >
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-              Person (optional)
-            </label>
-            <select
-              value={dialogPersonId}
-              onChange={(e) => setDialogPersonId(e.target.value)}
-              className="mt-1.5 w-full glass-input rounded-2xl px-4 py-2.5 text-xs text-foreground focus:outline-none"
-            >
-              <option value="" className="bg-popover text-popover-foreground">
-                — No person —
-              </option>
-              {people.map((p) => (
-                <option key={p.id} value={p.id} className="bg-popover text-popover-foreground">
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2.5 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-          >
-            {busy ? "Creating…" : "Create"}
-          </button>
-        </div>
-      </form>
-    </div>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 border border-border hover:bg-surface-2 rounded-full text-xs font-semibold text-foreground transition-all active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {busy ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

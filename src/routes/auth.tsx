@@ -3,18 +3,39 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Background3D } from "@/components/background-3d";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const authSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email")
+    .email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type AuthFormValues = z.infer<typeof authSchema>;
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"sign_in" | "sign_up">("sign_in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  const form = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   useEffect(() => {
     supabase.auth
@@ -30,38 +51,45 @@ function AuthPage() {
       });
   }, [navigate]);
 
-  async function handleEmail(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setConnectionError(null);
-    try {
-      if (mode === "sign_up") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Account created. Check your email if confirmation is required.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+  const handleEmail = form.handleSubmit(
+    async ({ email, password }) => {
+      setBusy(true);
+      setConnectionError(null);
+      try {
+        if (mode === "sign_up") {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.origin },
+          });
+          if (error) throw error;
+          toast.success("Account created. Check your email if confirmation is required.");
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+        }
+        navigate({ to: "/today", replace: true });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Something went wrong";
+        if (msg.includes("Failed to fetch") || msg.includes("ERR_NAME_NOT_RESOLVED")) {
+          const urlErr =
+            "Cannot resolve Supabase server URL. Check your VITE_SUPABASE_URL in .env file.";
+          setConnectionError(urlErr);
+          toast.error(urlErr);
+        } else {
+          toast.error(msg);
+        }
+      } finally {
+        setBusy(false);
       }
-      navigate({ to: "/today", replace: true });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong";
-      if (msg.includes("Failed to fetch") || msg.includes("ERR_NAME_NOT_RESOLVED")) {
-        const urlErr =
-          "Cannot resolve Supabase server URL. Check your VITE_SUPABASE_URL in .env file.";
-        setConnectionError(urlErr);
-        toast.error(urlErr);
-      } else {
-        toast.error(msg);
+    },
+    (errors) => {
+      const firstError = Object.values(errors)[0];
+      if (firstError?.message) {
+        toast.error(String(firstError.message));
       }
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+  );
 
   async function handleGoogle() {
     setBusy(true);
@@ -166,40 +194,53 @@ function AuthPage() {
             </button>
           </div>
 
-          <form onSubmit={handleEmail} className="space-y-4">
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 w-full glass-input rounded-2xl px-4.5 py-3 text-sm focus:outline-none"
+          <Form {...form}>
+            <form onSubmit={handleEmail} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Email
+                    </FormLabel>
+                    <FormControl>
+                      <input
+                        type="email"
+                        {...field}
+                        className="mt-1.5 w-full glass-input rounded-2xl px-4.5 py-3 text-sm focus:outline-none"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 w-full glass-input rounded-2xl px-4.5 py-3 text-sm focus:outline-none"
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ml-1">
+                      Password
+                    </FormLabel>
+                    <FormControl>
+                      <input
+                        type="password"
+                        {...field}
+                        className="mt-1.5 w-full glass-input rounded-2xl px-4.5 py-3 text-sm focus:outline-none"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
-            </div>
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-2xl text-xs font-bold uppercase tracking-widest disabled:opacity-50 transition-all duration-200 shadow-lg active:scale-[0.98]"
-            >
-              {mode === "sign_in" ? "Sign In" : "Create Account"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-2xl text-xs font-bold uppercase tracking-widest disabled:opacity-50 transition-all duration-200 shadow-lg active:scale-[0.98]"
+              >
+                {mode === "sign_in" ? "Sign In" : "Create Account"}
+              </button>
+            </form>
+          </Form>
 
           <div className="flex items-center gap-3 my-4 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             <div className="flex-1 border-t border-border" />

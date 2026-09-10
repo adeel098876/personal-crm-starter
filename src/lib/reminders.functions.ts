@@ -30,12 +30,43 @@ export const createReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => ReminderInput.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: created, error } = await context.supabase
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      due_at: data.due_at,
+      user_id: context.userId,
+      status: "open",
+    };
+    if (data.person_id) payload.person_id = data.person_id;
+    if (data.notes) payload.notes = data.notes;
+    if (data.recurrence) payload.recurrence = data.recurrence;
+    if (data.kind) payload.kind = data.kind;
+
+    const { data: initialCreated, error: initialError } = await context.supabase
       .from("reminders")
-      .insert({ ...data, user_id: context.userId })
+      .insert(payload)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+
+    let created = initialCreated;
+
+    if (initialError) {
+      // Fallback for database instances where newer columns (kind, notes, recurrence) are not yet migrated
+      const fallbackPayload: Record<string, unknown> = {
+        title: data.title,
+        due_at: data.due_at,
+        user_id: context.userId,
+        status: "open",
+      };
+      if (data.person_id) fallbackPayload.person_id = data.person_id;
+
+      const res = await context.supabase
+        .from("reminders")
+        .insert(fallbackPayload)
+        .select()
+        .single();
+      if (res.error) throw new Error(res.error.message);
+      created = res.data;
+    }
     return { reminder: created };
   });
 
