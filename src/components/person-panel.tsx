@@ -371,10 +371,18 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
           {q.data &&
             (() => {
               const { person, interactions, notes, fields, promises, health } = q.data;
-              const normalizedNotes = notes.map((n) => ({
-                ...n,
-                body: n.body || "",
-              }));
+              const normalizedNotes = notes.map((n) => {
+                const text =
+                  (typeof n.body === "string" && n.body) ||
+                  (typeof (n as { content?: string }).content === "string" &&
+                    (n as { content?: string }).content) ||
+                  "";
+                return {
+                  ...n,
+                  body: text,
+                  content: text,
+                };
+              });
 
               return (
                 <div className="p-6 space-y-6">

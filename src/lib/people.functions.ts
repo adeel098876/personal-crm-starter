@@ -64,19 +64,35 @@ export const getPerson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!person) throw new Error("Not found");
 
-    const [ints, nts, flds, rmnds, prms] = await Promise.all([
+    // Query notes with graceful fallback if 'pinned' column does not exist in schema
+    let nts = await supabase
+      .from("notes")
+      .select("*")
+      .eq("person_id", data.id)
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (nts.error) {
+      // Fallback: order by created_at only (e.g. if 'pinned' column is not in DB)
+      nts = await supabase
+        .from("notes")
+        .select("*")
+        .eq("person_id", data.id)
+        .order("created_at", { ascending: false });
+    }
+
+    if (nts.error) {
+      // Fallback: select without ordering
+      nts = await supabase.from("notes").select("*").eq("person_id", data.id);
+    }
+
+    const [ints, flds, rmnds, prms] = await Promise.all([
       supabase
         .from("interactions")
         .select("*")
         .eq("person_id", data.id)
         .order("occurred_at", { ascending: false })
         .limit(50),
-      supabase
-        .from("notes")
-        .select("*")
-        .eq("person_id", data.id)
-        .order("pinned", { ascending: false })
-        .order("created_at", { ascending: false }),
       supabase.from("person_fields").select("*").eq("person_id", data.id),
       supabase
         .from("reminders")
@@ -92,7 +108,42 @@ export const getPerson = createServerFn({ method: "POST" })
     ]);
 
     const interactions = ints.data ?? [];
-    const notes = nts.data ?? [];
+    const rawNotes = (nts.data ?? []) as Array<{
+      id: string;
+      person_id: string;
+      user_id: string;
+      body?: string;
+      content?: string;
+      pinned?: boolean;
+      created_at?: string;
+      updated_at?: string;
+    }>;
+
+    const notes = rawNotes.map((n) => {
+      const text =
+        (typeof n.body === "string" && n.body) ||
+        (typeof n.content === "string" && n.content) ||
+        "";
+      return {
+        id: n.id,
+        person_id: n.person_id,
+        user_id: n.user_id,
+        body: text,
+        content: text,
+        pinned: Boolean(n.pinned),
+        created_at: n.created_at || n.updated_at || new Date().toISOString(),
+        updated_at: n.updated_at || n.created_at || new Date().toISOString(),
+      };
+    });
+
+    notes.sort((a, b) => {
+      if (Boolean(a.pinned) && !b.pinned) return -1;
+      if (!a.pinned && Boolean(b.pinned)) return 1;
+      const tA = new Date(a.created_at).getTime() || 0;
+      const tB = new Date(b.created_at).getTime() || 0;
+      return tB - tA;
+    });
+
     const fields = flds.data ?? [];
     const reminders = rmnds.data ?? [];
     const promises = prms.data ?? [];
@@ -203,24 +254,110 @@ export const addNote = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { data: initialNote, error: initialError } = await context.supabase
+    const now = new Date().toISOString();
+    let insertedNote: {
+      id: string;
+      person_id: string;
+      user_id: string;
+      body?: string;
+      content?: string;
+      pinned?: boolean;
+      created_at?: string;
+      updated_at?: string;
+    } | null = null;
+    let lastError: Error | null = null;
+
+    // 1. Try standard schema: body, pinned, created_at
+    const tryStandard = await context.supabase
       .from("notes")
-      .insert({ ...data, user_id: context.userId })
+      .insert({
+        person_id: data.person_id,
+        user_id: context.userId,
+        body: data.body,
+        pinned: data.pinned ?? false,
+        created_at: now,
+      })
       .select()
       .single();
 
-    let note = initialNote;
+    if (!tryStandard.error && tryStandard.data) {
+      insertedNote = tryStandard.data;
+    } else {
+      lastError = tryStandard.error ? new Error(tryStandard.error.message) : null;
 
-    if (initialError) {
-      const res = await context.supabase
+      // 2. Fallback: try 'content' column instead of 'body' with 'pinned'
+      const tryContent = await context.supabase
         .from("notes")
-        .insert({ person_id: data.person_id, content: data.body, user_id: context.userId })
+        .insert({
+          person_id: data.person_id,
+          user_id: context.userId,
+          content: data.body,
+          pinned: data.pinned ?? false,
+          created_at: now,
+        } as unknown as { person_id: string; user_id: string; body: string })
         .select()
         .single();
-      if (res.error) throw new Error(initialError.message);
-      note = res.data;
+
+      if (!tryContent.error && tryContent.data) {
+        insertedNote = tryContent.data as typeof insertedNote;
+        lastError = null;
+      } else {
+        // 3. Fallback: try 'content' without 'pinned' (in case 'pinned' column does not exist)
+        const tryWithoutPinned = await context.supabase
+          .from("notes")
+          .insert({
+            person_id: data.person_id,
+            user_id: context.userId,
+            content: data.body,
+            created_at: now,
+          } as unknown as { person_id: string; user_id: string; body: string })
+          .select()
+          .single();
+
+        if (!tryWithoutPinned.error && tryWithoutPinned.data) {
+          insertedNote = tryWithoutPinned.data as typeof insertedNote;
+          lastError = null;
+        } else {
+          // 4. Fallback: minimal insert with person_id, user_id, content
+          const tryMinimal = await context.supabase
+            .from("notes")
+            .insert({
+              person_id: data.person_id,
+              user_id: context.userId,
+              content: data.body,
+            } as unknown as { person_id: string; user_id: string; body: string })
+            .select()
+            .single();
+
+          if (!tryMinimal.error && tryMinimal.data) {
+            insertedNote = tryMinimal.data as typeof insertedNote;
+            lastError = null;
+          } else if (tryMinimal.error) {
+            lastError = new Error(tryMinimal.error.message);
+          }
+        }
+      }
     }
-    return { note };
+
+    if (lastError || !insertedNote) {
+      throw lastError || new Error("Failed to save note");
+    }
+
+    const noteText =
+      (typeof insertedNote.body === "string" && insertedNote.body) ||
+      (typeof insertedNote.content === "string" && insertedNote.content) ||
+      data.body;
+
+    const normalized = {
+      ...insertedNote,
+      body: noteText,
+      content: noteText,
+      pinned: Boolean(insertedNote.pinned ?? data.pinned),
+      created_at: insertedNote.created_at || now,
+      updated_at: insertedNote.updated_at || now,
+    };
+
+    return { note: normalized };
   });
 
 export const deleteNote = createServerFn({ method: "POST" })

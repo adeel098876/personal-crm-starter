@@ -318,30 +318,37 @@ function PersonPage() {
             </div>
           </div>
           <div className="space-y-3">
-            {notes.map((n) => (
-              <div
-                key={n.id}
-                className="glass-panel rounded-3xl p-4.5 text-sm relative group shadow-md"
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <p className="whitespace-pre-wrap flex-1 text-foreground font-medium text-xs leading-relaxed">
-                    {n.body}
+            {notes.map((n) => {
+              const noteText =
+                (typeof n.body === "string" && n.body) ||
+                (typeof (n as { content?: string }).content === "string" &&
+                  (n as { content?: string }).content) ||
+                "";
+              return (
+                <div
+                  key={n.id}
+                  className="glass-panel rounded-3xl p-4.5 text-sm relative group shadow-md"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="whitespace-pre-wrap flex-1 text-foreground font-medium text-xs leading-relaxed">
+                      {noteText}
+                    </p>
+                    <button
+                      onClick={async () => {
+                        await removeN({ data: { id: n.id } });
+                        invalidate();
+                      }}
+                      className="size-6 rounded-full bg-surface-2 border border-border items-center justify-center text-muted-foreground hover:text-destructive flex transition-colors text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <p className="text-[9px] font-semibold tracking-wide text-muted-foreground mt-3.5">
+                    {formatAgo(n.created_at)}
                   </p>
-                  <button
-                    onClick={async () => {
-                      await removeN({ data: { id: n.id } });
-                      invalidate();
-                    }}
-                    className="size-6 rounded-full bg-surface-2 border border-border items-center justify-center text-muted-foreground hover:text-destructive flex transition-colors text-xs"
-                  >
-                    ×
-                  </button>
                 </div>
-                <p className="text-[9px] font-semibold tracking-wide text-muted-foreground mt-3.5">
-                  {formatAgo(n.created_at)}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

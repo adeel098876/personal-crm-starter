@@ -74,7 +74,7 @@ export async function signVapidJwt(
   const payload = {
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
-    sub: keys.subject,
+    sub: keys.subject || "mailto:notifications@kinetic.app",
   };
   const enc = (obj: unknown) => base64UrlEncode(new TextEncoder().encode(JSON.stringify(obj)));
   const unsigned = `${enc(header)}.${enc(payload)}`;
@@ -126,25 +126,65 @@ export async function sendWebPush(
 /** Fetch or lazily create the single VAPID key row. */
 export async function getOrCreateVapidKeys(): Promise<VapidKeys> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: existing } = await supabaseAdmin
+
+  interface VapidKeyRow {
+    public_key: string;
+    private_key: string;
+    subject?: string | null;
+  }
+
+  // 1. Attempt select("*") so missing optional columns don't fail PostgREST schema cache
+  const { data: existing, error: selectError } = await supabaseAdmin
     .from("vapid_keys")
-    .select("public_key, private_key, subject")
+    .select("*")
     .eq("id", 1)
     .maybeSingle();
-  if (existing) {
+
+  let row: VapidKeyRow | null = existing as VapidKeyRow | null;
+
+  if (selectError) {
+    // Fallback: select public_key, private_key explicitly
+    const fallback = await supabaseAdmin
+      .from("vapid_keys")
+      .select("public_key, private_key")
+      .eq("id", 1)
+      .maybeSingle();
+    if (fallback.data) {
+      row = fallback.data as VapidKeyRow;
+    }
+  }
+
+  if (row) {
     return {
-      publicKey: existing.public_key,
-      privateKey: existing.private_key,
-      subject: existing.subject,
+      publicKey: row.public_key,
+      privateKey: row.private_key,
+      subject: row.subject || "mailto:notifications@kinetic.app",
     };
   }
+
   const keys = await generateVapidKeys();
-  const { error } = await supabaseAdmin.from("vapid_keys").insert({
+
+  // Try inserting with subject (if the column exists in the database)
+  const insertWithSubject = await supabaseAdmin.from("vapid_keys").insert({
     id: 1,
     public_key: keys.publicKey,
     private_key: keys.privateKey,
     subject: keys.subject,
   });
-  if (error && !error.message.includes("duplicate")) throw new Error(error.message);
+
+  if (insertWithSubject.error) {
+    // If inserting with 'subject' fails (e.g. column not in remote database schema cache),
+    // fallback to inserting without 'subject'
+    const insertWithoutSubject = await supabaseAdmin.from("vapid_keys").insert({
+      id: 1,
+      public_key: keys.publicKey,
+      private_key: keys.privateKey,
+    });
+
+    if (insertWithoutSubject.error && !insertWithoutSubject.error.message.includes("duplicate")) {
+      throw new Error(insertWithoutSubject.error.message);
+    }
+  }
+
   return keys;
 }
