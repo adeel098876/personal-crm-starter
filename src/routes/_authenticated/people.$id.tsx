@@ -10,28 +10,23 @@ import {
   getPerson,
   updatePerson,
 } from "@/lib/people.functions";
-import { logInteraction } from "@/lib/interactions.functions";
+import { logInteraction, INTERACTION_TYPES } from "@/lib/interactions.functions";
 import { createPromise, resolvePromise } from "@/lib/reminders.functions";
-import { meetingPrep, summarizeNotes } from "@/lib/ai.functions";
+import {
+  meetingPrep,
+  summarizeNotes,
+  type SummaryAction,
+  type SummaryResult,
+} from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
+import { getInitials, formatAgo } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   component: PersonPage,
 });
-
-const INTERACTION_TYPES = [
-  "call",
-  "message",
-  "meeting",
-  "email",
-  "coffee",
-  "gift",
-  "note",
-  "milestone",
-] as const;
 
 function PersonPage() {
   const { id } = Route.useParams();
@@ -70,15 +65,6 @@ function PersonPage() {
   const [rawNotes, setRawNotes] = useState("");
   const [brief, setBrief] = useState<string | null>(null);
   const [briefBusy, setBriefBusy] = useState(false);
-  interface SummaryAction {
-    owner: string;
-    description: string;
-  }
-  interface SummaryResult {
-    summary: string;
-    actions: SummaryAction[];
-    follow_ups: Array<{ title: string; when: string }>;
-  }
 
   const [summaryResult, setSummaryResult] = useState<SummaryResult | null>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
@@ -121,7 +107,7 @@ function PersonPage() {
         <header className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-4.5">
             <div className="size-16 rounded-3xl bg-surface-2 border border-border grid place-items-center text-xl font-bold text-foreground shadow-md">
-              {initials(person.name)}
+              {getInitials(person.name)}
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
@@ -239,7 +225,7 @@ function PersonPage() {
                   <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider">
                     <span className="text-primary">{i.type}</span>
                     <span className="text-muted-foreground font-medium">
-                      {formatDistanceToNow(new Date(i.occurred_at), { addSuffix: true })}
+                      {formatAgo(i.occurred_at)}
                     </span>
                   </div>
                   {i.summary && (
@@ -352,7 +338,7 @@ function PersonPage() {
                   </button>
                 </div>
                 <p className="text-[9px] font-semibold tracking-wide text-muted-foreground mt-3.5">
-                  {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                  {formatAgo(n.created_at)}
                 </p>
               </div>
             ))}
@@ -518,9 +504,4 @@ function StatBlock({ label, children }: { label: string; children: React.ReactNo
       <p className="mt-1 text-sm font-bold text-foreground leading-tight">{children}</p>
     </div>
   );
-}
-
-function initials(name: string) {
-  const parts = name.split(" ").filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
 }

@@ -8,7 +8,7 @@ import {
   addField,
   deleteField,
 } from "@/lib/people.functions";
-import { logInteraction } from "@/lib/interactions.functions";
+import { logInteraction, INTERACTION_TYPES } from "@/lib/interactions.functions";
 import { createPromise, resolvePromise } from "@/lib/reminders.functions";
 import {
   meetingPrep,
@@ -16,23 +16,15 @@ import {
   getConversationStarters,
   draftMessage,
   diagnoseRelationship,
+  type SummaryAction,
+  type SummaryResult,
 } from "@/lib/ai.functions";
 import { HealthRing } from "@/components/health-ring";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { formatDistanceToNow, format } from "date-fns";
-
-const INTERACTION_TYPES = [
-  "call",
-  "message",
-  "meeting",
-  "email",
-  "coffee",
-  "gift",
-  "note",
-  "milestone",
-] as const;
+import { format } from "date-fns";
+import { getInitials, formatAgo } from "@/lib/utils";
 
 const DRAFT_OCCASIONS = [
   { value: "birthday", label: "🎂 Birthday" },
@@ -46,15 +38,6 @@ const DRAFT_OCCASIONS = [
 type DraftOccasion = (typeof DRAFT_OCCASIONS)[number]["value"];
 type DraftTone = "warm" | "professional" | "casual";
 
-interface SummaryAction {
-  owner: string;
-  description: string;
-}
-interface SummaryResult {
-  summary: string;
-  actions: SummaryAction[];
-  follow_ups: Array<{ title: string; when: string }>;
-}
 interface ConversationStarter {
   opener: string;
   context: string;
@@ -66,11 +49,6 @@ interface DiagnosisResult {
   strengths: string[];
   risks: string[];
   top_action: string;
-}
-
-function initials(name: string) {
-  const parts = name.split(" ").filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
 }
 
 function Spinner({ size = 3 }: { size?: number }) {
@@ -123,12 +101,6 @@ function CopyButton({ text }: { text: string }) {
       {copied ? "Copied ✓" : "Copy"}
     </button>
   );
-}
-
-function formatAgo(dateStr?: string) {
-  if (!dateStr) return "recently";
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? "recently" : formatDistanceToNow(d, { addSuffix: true });
 }
 
 export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
@@ -409,7 +381,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                   {/* Hero */}
                   <div className="flex items-center gap-4">
                     <div className="size-14 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/5 border border-primary/20 grid place-items-center text-lg font-bold text-primary shadow-lg shadow-primary/20">
-                      {initials(person.name)}
+                      {getInitials(person.name)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[9px] font-bold uppercase tracking-widest text-primary">

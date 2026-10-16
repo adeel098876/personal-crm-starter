@@ -2,6 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+export interface SummaryAction {
+  owner: string;
+  description: string;
+}
+
+export interface SummaryResult {
+  summary: string;
+  actions: SummaryAction[];
+  follow_ups: Array<{ title: string; when: string }>;
+}
+
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 async function callAI(

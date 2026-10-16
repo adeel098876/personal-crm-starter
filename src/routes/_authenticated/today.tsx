@@ -10,6 +10,7 @@ import { PersonPanel } from "@/components/person-panel";
 import { format } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
+import { getInitials } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/today")({
   component: TodayPage,
@@ -441,8 +442,7 @@ function Section({
 }
 
 function Initials({ name }: { name: string }) {
-  const parts = name.split(" ").filter(Boolean);
-  const s = ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
+  const s = getInitials(name);
   return (
     <div className="size-10 rounded-2xl bg-surface-2 border border-border grid place-items-center font-bold text-xs text-foreground">
       {s}

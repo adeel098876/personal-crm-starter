@@ -2,9 +2,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+export const INTERACTION_TYPES = [
+  "call",
+  "message",
+  "meeting",
+  "email",
+  "coffee",
+  "gift",
+  "note",
+  "milestone",
+] as const;
+
+export type InteractionType = (typeof INTERACTION_TYPES)[number];
+
 const InteractionInput = z.object({
   person_id: z.string().uuid(),
-  type: z.enum(["call", "message", "meeting", "email", "coffee", "gift", "note", "milestone"]),
+  type: z.enum([
+    "call",
+    "message",
+    "meeting",
+    "email",
+    "coffee",
+    "gift",
+    "note",
+    "milestone",
+  ] as const),
   channel: z.string().max(50).optional().nullable(),
   occurred_at: z.string().optional(),
   summary: z.string().max(2000).optional().nullable(),
