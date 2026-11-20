@@ -104,19 +104,35 @@ BEGIN
     ALTER TABLE public.people ALTER COLUMN anniversary TYPE DATE USING NULLIF(anniversary, '')::DATE;
   END IF;
 
-  -- Convert tags from JSONB to TEXT[] safely if needed
+  -- Convert tags from JSONB to TEXT[] safely if needed.
+  -- NOTE: a set-returning function (jsonb_array_elements_text) cannot be used
+  -- inside ALTER COLUMN ... USING, so the conversion is wrapped in a scalar
+  -- PL/pgSQL helper function. The set-returning call lives inside the
+  -- function body, not in the USING expression.
   IF EXISTS (
-    SELECT 1 FROM information_schema.columns 
+    SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'people' AND column_name = 'tags' AND data_type = 'jsonb'
   ) THEN
+    CREATE OR REPLACE FUNCTION public._jsonb_tags_to_text(tags jsonb)
+    RETURNS text[] AS $$
+    DECLARE
+      result text[] := '{}'::text[];
+    BEGIN
+      IF tags IS NULL THEN
+        RETURN result;
+      END IF;
+      IF jsonb_typeof(tags) = 'array' THEN
+        SELECT array_agg(value ORDER BY ordinality)
+        INTO result
+        FROM jsonb_array_elements_text(tags) WITH ORDINALITY;
+      END IF;
+      RETURN COALESCE(result, '{}'::text[]);
+    END;
+    $$ LANGUAGE plpgsql IMMUTABLE;
+
     ALTER TABLE public.people ALTER COLUMN tags DROP DEFAULT;
-    ALTER TABLE public.people ALTER COLUMN tags TYPE TEXT[] USING (
-      CASE 
-        WHEN tags IS NULL THEN '{}'::text[]
-        WHEN jsonb_typeof(tags) = 'array' THEN ARRAY(SELECT jsonb_array_elements_text(tags))
-        ELSE '{}'::text[]
-      END
-    );
+    ALTER TABLE public.people ALTER COLUMN tags TYPE TEXT[]
+      USING public._jsonb_tags_to_text(tags);
     ALTER TABLE public.people ALTER COLUMN tags SET DEFAULT '{}';
   END IF;
 END $$;
