@@ -162,7 +162,7 @@ function AuthPage() {
             </svg>
           </div>
           <h1 className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground font-extrabold text-3xl tracking-tight">
-            Kinetic
+            Bond Insight Keeper
           </h1>
           <p className="mt-1.5 text-[10px] font-mono text-muted-foreground uppercase tracking-[0.25em]">
             Relationship OS

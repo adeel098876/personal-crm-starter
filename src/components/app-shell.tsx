@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </defs>
               </svg>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground font-extrabold text-xl tracking-tight">
-                Kinetic
+                Bond Insight Keeper
               </span>
             </Link>
 
@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Theme Toggle Button */}
             <button
               onClick={cycleTheme}
-              title={`Theme: ${theme} (click to toggle)`}
+              aria-label={`Theme: ${theme} (click to toggle between system, dark, light)`}
               className="size-9 rounded-full glass-panel flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-90"
             >
               {theme === "light" && (

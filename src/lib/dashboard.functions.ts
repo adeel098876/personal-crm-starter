@@ -26,7 +26,8 @@ export const getDashboard = createServerFn({ method: "POST" })
         .from("interactions")
         .select("person_id, occurred_at")
         .eq("user_id", userId)
-        .order("occurred_at", { ascending: false }),
+        .order("occurred_at", { ascending: false })
+        .limit(500),
     ]);
 
     const people = pplRes.data ?? [];
@@ -109,7 +110,8 @@ export const getAnalytics = createServerFn({ method: "POST" })
         .from("interactions")
         .select("person_id, occurred_at, type")
         .eq("user_id", userId)
-        .gte("occurred_at", since),
+        .gte("occurred_at", since)
+        .limit(1000),
       supabase.from("promises").select("status").eq("user_id", userId),
     ]);
 

@@ -19,11 +19,11 @@ async function callAI(
   messages: Array<{ role: string; content: string }>,
   jsonMode = false,
 ): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey || apiKey.trim() === "") {
     throw new Error(
-      "GROQ_API_KEY is not configured. Add GROQ_API_KEY=gsk_... to your .env file and restart the server.",
+      "GROQ_API_KEY is not configured. Add GROQ_API_KEY=gsk_... to your server environment and restart the server.",
     );
   }
 
@@ -85,7 +85,8 @@ export const smartSearch = createServerFn({ method: "POST" })
       supabase
         .from("person_fields")
         .select("person_id, category, key, value")
-        .eq("user_id", userId),
+        .eq("user_id", userId)
+        .limit(500),
     ]);
 
     const people = pplRes.data ?? [];
@@ -147,8 +148,8 @@ export const meetingPrep = createServerFn({ method: "POST" })
         .eq("person_id", data.person_id)
         .order("occurred_at", { ascending: false })
         .limit(20),
-      supabase.from("notes").select("*").eq("person_id", data.person_id),
-      supabase.from("person_fields").select("*").eq("person_id", data.person_id),
+      supabase.from("notes").select("*").eq("person_id", data.person_id).limit(50),
+      supabase.from("person_fields").select("*").eq("person_id", data.person_id).limit(50),
       supabase.from("promises").select("*").eq("person_id", data.person_id).eq("status", "open"),
     ]);
 
@@ -335,7 +336,7 @@ export const getConversationStarters = createServerFn({ method: "POST" })
         .select("body, content, created_at")
         .eq("person_id", data.person_id)
         .limit(5),
-      supabase.from("person_fields").select("category, key, value").eq("person_id", data.person_id),
+      supabase.from("person_fields").select("category, key, value").eq("person_id", data.person_id).limit(50),
     ]);
 
     const raw = await callAI(

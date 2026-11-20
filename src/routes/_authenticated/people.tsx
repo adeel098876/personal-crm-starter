@@ -123,6 +123,28 @@ function PeoplePage() {
                   </td>
                 </tr>
               )}
+              {people.isError && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <div className="glass-panel rounded-2xl p-5 border-destructive/30 bg-destructive/5">
+                      <p className="text-sm font-semibold text-destructive mb-1">
+                        We couldn't load your contacts.
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Your connection is fine — the request failed on our end.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => people.refetch()}
+                        disabled={people.isFetching}
+                        className="text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
+                      >
+                        {people.isFetching ? "Retrying…" : "Try again"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

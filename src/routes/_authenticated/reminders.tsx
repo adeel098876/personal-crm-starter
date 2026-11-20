@@ -85,7 +85,11 @@ function RemindersPage() {
       toast.error("Please enter what to remember");
       return;
     }
-    createMut.mutate();
+    if (!dueDate || isNaN(dueDate.getTime())) {
+      toast.error("Please select a valid due date");
+      return;
+    }
+    createMut.mutate({ title, due: dueDate, person_id: personId });
   };
 
   return (
@@ -174,6 +178,26 @@ function RemindersPage() {
         {q.data?.reminders.length === 0 && (
           <p className="p-8 text-center text-sm text-muted-foreground">No {tab} reminders.</p>
         )}
+        {q.isError && (
+          <div className="p-8 text-center">
+            <div className="glass-panel rounded-2xl p-5 border-destructive/30 bg-destructive/5 max-w-sm mx-auto">
+              <p className="text-sm font-semibold text-destructive mb-1">
+                We couldn't load your reminders.
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Your connection is fine — the request failed on our end.
+              </p>
+              <button
+                type="button"
+                onClick={() => q.refetch()}
+                disabled={q.isFetching}
+                className="text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
+              >
+                {q.isFetching ? "Retrying…" : "Try again"}
+              </button>
+            </div>
+          </div>
+        )}
         {q.data?.reminders.map((r) => (
           <div
             key={r.id}
@@ -243,7 +267,7 @@ const createReminderSchema = z.object({
     required_error: "Please select a due date",
     invalid_type_error: "Please select a due date",
   }),
-  person_id: z.string().default(""),
+  person_id: z.string(),
 });
 
 type CreateReminderFormValues = z.infer<typeof createReminderSchema>;

@@ -11,6 +11,7 @@ import {
   listPushSubscriptions,
   testPush,
 } from "@/lib/push.functions";
+import { deleteAccount } from "@/lib/people.functions";
 import {
   isIos,
   isPushSupported,
@@ -102,9 +103,30 @@ function SettingsPage() {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
-    toast.success("Signed out");
-    navigate({ to: "/auth", replace: true });
+    try {
+      await supabase.auth.signOut();
+      toast.success("Signed out");
+      navigate({ to: "/auth", replace: true });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sign out failed");
+    }
+  }
+
+  async function deleteMyAccount() {
+    if (!confirm("Delete your account and all of your data? This cannot be undone.")) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await deleteAccount();
+      toast.success("Account deleted");
+      await supabase.auth.signOut();
+      navigate({ to: "/auth", replace: true });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Account deletion failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -131,6 +153,13 @@ function SettingsPage() {
           className="text-xs font-bold uppercase tracking-wider text-destructive border border-destructive/20 hover:bg-destructive/10 rounded-full px-5 py-2.5 transition-all duration-200 active:scale-95"
         >
           Sign out
+        </button>
+        <button
+          onClick={deleteMyAccount}
+          disabled={busy}
+          className="text-[10px] font-bold uppercase tracking-wider text-destructive/70 border border-destructive/20 hover:bg-destructive/10 rounded-full px-5 py-2 transition-all duration-200 active:scale-95 disabled:opacity-50"
+        >
+          {busy ? "Deleting…" : "Delete account"}
         </button>
       </div>
 

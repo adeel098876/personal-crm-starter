@@ -98,6 +98,25 @@ function TodayPage() {
           </h1>
         </header>
 
+        {dashboard.isError && (
+          <div className="glass-panel rounded-3xl p-6 border-destructive/30 bg-destructive/5">
+            <p className="text-sm font-semibold text-destructive mb-1">
+              We couldn't load your dashboard.
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Your connection is fine — the request failed on our end.
+            </p>
+            <button
+              type="button"
+              onClick={() => dashboard.refetch()}
+              disabled={dashboard.isFetching}
+              className="text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 bg-primary/10 rounded-full px-3.5 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
+            >
+              {dashboard.isFetching ? "Retrying…" : "Try again"}
+            </button>
+          </div>
+        )}
+
         {empty && <EmptyState />}
 
         <Section

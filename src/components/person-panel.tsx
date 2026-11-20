@@ -763,6 +763,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                                   deleteNoteMut.isPending && deleteNoteMut.variables === n.id
                                 }
                                 onClick={() => deleteNoteMut.mutate(n.id)}
+                                aria-label={`Delete note`}
                                 className="size-6 rounded-full bg-surface-2 border border-border flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors text-sm flex-shrink-0 disabled:opacity-50"
                               >
                                 {deleteNoteMut.isPending && deleteNoteMut.variables === n.id ? (
@@ -1107,6 +1108,7 @@ export function PersonPanel({ id, onClose }: { id: string; onClose: () => void }
                                 deleteFieldMut.isPending && deleteFieldMut.variables === f.id
                               }
                               onClick={() => deleteFieldMut.mutate(f.id)}
+                              aria-label={`Delete field ${f.key}`}
                               className="text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-2 disabled:opacity-50"
                             >
                               {deleteFieldMut.isPending && deleteFieldMut.variables === f.id ? (

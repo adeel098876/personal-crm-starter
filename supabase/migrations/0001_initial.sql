@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS public.reminders (
 );
 
 -- Table: import_batches
-CREATE TABLE public.import_batches (
+CREATE TABLE IF NOT EXISTS public.import_batches (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     source TEXT NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE public.import_batches (
 );
 
 -- Table: push_subscriptions
-CREATE TABLE public.push_subscriptions (
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     endpoint TEXT NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE public.push_subscriptions (
 );
 
 -- Table: vapid_keys
-CREATE TABLE public.vapid_keys (
+CREATE TABLE IF NOT EXISTS public.vapid_keys (
     id INTEGER PRIMARY KEY DEFAULT 1,
     public_key TEXT NOT NULL,
     private_key TEXT NOT NULL,
@@ -123,13 +123,18 @@ ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 -- vapid_keys is server-only, no RLS needed as it shouldn't be accessed by clients directly
 ALTER TABLE public.vapid_keys ENABLE ROW LEVEL SECURITY;
 
--- Helper to create policies
+-- Helper to create policies safely
 CREATE OR REPLACE FUNCTION create_user_policy(table_name text) RETURNS void AS $$
 BEGIN
-    EXECUTE format('
-        CREATE POLICY "Users can only access their own data" ON public.%I
-        FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-    ', table_name);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = table_name AND policyname = 'Users can only access their own data'
+    ) THEN
+        EXECUTE format('
+            CREATE POLICY "Users can only access their own data" ON public.%I
+            FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+        ', table_name);
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -144,4 +149,12 @@ SELECT create_user_policy('import_batches');
 SELECT create_user_policy('push_subscriptions');
 
 -- Prevent client access to vapid_keys
-CREATE POLICY "No client access to vapid_keys" ON public.vapid_keys FOR ALL USING (false);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'vapid_keys' AND policyname = 'No client access to vapid_keys'
+    ) THEN
+        CREATE POLICY "No client access to vapid_keys" ON public.vapid_keys FOR ALL USING (false);
+    END IF;
+END $$;

@@ -26,17 +26,18 @@ Supabase
 
 PostgreSQL
 
-OpenAI
+Groq
 
 PWA
 
 Current AI Provider
 
-OpenAI
+Groq
 
 Model
 
-Latest cost-effective OpenAI model configured via environment variables.
+`llama-3.3-70b-versatile` (see `src/lib/ai.functions.ts`). The API key is read from the
+server-side `GROQ_API_KEY` environment variable only. It is never exposed to the client.
 
 Future Providers
 

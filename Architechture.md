@@ -31,15 +31,15 @@ Frontend
 
 ↓
 
-Supabase Edge Function
+TanStack Server Function (`src/lib/ai.functions.ts`)
 
 ↓
 
-AIService
+Groq API (`https://api.groq.com/openai/v1/chat/completions`)
 
-↓
+Model: `llama-3.3-70b-versatile`
 
-OpenAI Provider
+Key: server-side `GROQ_API_KEY` only (never client-exposed)
 
 Future:
 

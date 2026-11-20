@@ -38,7 +38,8 @@ No inline CSS.
 
 ## AI
 
-Never call OpenAI directly from React.
+Never call the AI provider directly from React. The provider is Groq
+(`llama-3.3-70b-versatile`, key from server-side `GROQ_API_KEY` only).
 
 Always
 
@@ -46,11 +47,13 @@ React
 
 ↓
 
-Supabase Edge Function
+TanStack Server Function (`src/lib/ai.functions.ts`)
 
 ↓
 
-OpenAI
+Groq API
+
+Never expose `GROQ_API_KEY` to the client (no `VITE_GROQ_API_KEY`).
 
 ---
 

@@ -35,7 +35,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
-      { title: "Kinetic — Relationship OS" },
+      { title: "Bond Insight Keeper — Relationship OS" },
       {
         name: "description",
         content:
           "A private, keyboard-first relationship operating system. Never forget a birthday, a promise, or someone who matters.",
       },
-      { property: "og:title", content: "Kinetic — Relationship OS" },
+      { property: "og:title", content: "Bond Insight Keeper — Relationship OS" },
       {
         property: "og:description",
         content: "A private, keyboard-first relationship operating system.",
@@ -94,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#050508" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Kinetic" },
+      { name: "apple-mobile-web-app-title", content: "Bond Insight Keeper" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [

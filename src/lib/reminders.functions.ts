@@ -30,42 +30,25 @@ export const createReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => ReminderInput.parse(data))
   .handler(async ({ data, context }) => {
-    const payload: Record<string, unknown> = {
+    const payload = {
       title: data.title,
       due_at: data.due_at,
       user_id: context.userId,
       status: "open",
+      ...(data.person_id ? { person_id: data.person_id } : {}),
+      ...(data.notes ? { notes: data.notes } : {}),
+      ...(data.recurrence ? { recurrence: data.recurrence } : {}),
+      ...(data.kind ? { kind: data.kind } : {}),
     };
-    if (data.person_id) payload.person_id = data.person_id;
-    if (data.notes) payload.notes = data.notes;
-    if (data.recurrence) payload.recurrence = data.recurrence;
-    if (data.kind) payload.kind = data.kind;
 
-    const { data: initialCreated, error: initialError } = await context.supabase
+    const { data: created, error } = await context.supabase
       .from("reminders")
       .insert(payload)
       .select()
       .single();
 
-    let created = initialCreated;
-
-    if (initialError) {
-      // Fallback for database instances where newer columns (kind, notes, recurrence) are not yet migrated
-      const fallbackPayload: Record<string, unknown> = {
-        title: data.title,
-        due_at: data.due_at,
-        user_id: context.userId,
-        status: "open",
-      };
-      if (data.person_id) fallbackPayload.person_id = data.person_id;
-
-      const res = await context.supabase
-        .from("reminders")
-        .insert(fallbackPayload)
-        .select()
-        .single();
-      if (res.error) throw new Error(res.error.message);
-      created = res.data;
+    if (error || !created) {
+      throw new Error(error?.message || "Failed to create reminder");
     }
     return { reminder: created };
   });
@@ -142,19 +125,12 @@ export const resolvePromise = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    let res = await context.supabase
+    const { error } = await context.supabase
       .from("promises")
       .update({ status: data.status, completed_at: new Date().toISOString() })
       .eq("id", data.id)
       .eq("user_id", context.userId);
 
-    if (res.error) {
-      res = await context.supabase
-        .from("promises")
-        .update({ status: data.status })
-        .eq("id", data.id)
-        .eq("user_id", context.userId);
-    }
-    if (res.error) throw new Error(res.error.message);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

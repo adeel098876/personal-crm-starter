@@ -38,41 +38,25 @@ export const logInteraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => InteractionInput.parse(data))
   .handler(async ({ data, context }) => {
-    const payload: Record<string, unknown> = {
+    const payload = {
       person_id: data.person_id,
       type: data.type,
       summary: data.summary || null,
       occurred_at: data.occurred_at || new Date().toISOString(),
       user_id: context.userId,
+      ...(data.channel ? { channel: data.channel } : {}),
+      ...(data.mood ? { mood: data.mood } : {}),
+      ...(data.location ? { location: data.location } : {}),
     };
-    if (data.channel) payload.channel = data.channel;
-    if (data.mood) payload.mood = data.mood;
-    if (data.location) payload.location = data.location;
 
-    const { data: initialCreated, error: initialError } = await context.supabase
+    const { data: created, error } = await context.supabase
       .from("interactions")
       .insert(payload)
       .select()
       .single();
 
-    let created = initialCreated;
-
-    if (initialError) {
-      // Fallback for minimal column schema
-      const fallbackPayload = {
-        person_id: data.person_id,
-        type: data.type,
-        summary: data.summary || null,
-        occurred_at: data.occurred_at || new Date().toISOString(),
-        user_id: context.userId,
-      };
-      const res = await context.supabase
-        .from("interactions")
-        .insert(fallbackPayload)
-        .select()
-        .single();
-      if (res.error) throw new Error(res.error.message);
-      created = res.data;
+    if (error || !created) {
+      throw new Error(error?.message || "Failed to log interaction");
     }
     return { interaction: created };
   });

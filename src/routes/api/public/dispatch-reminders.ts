@@ -3,11 +3,41 @@ import { createFileRoute } from "@tanstack/react-router";
 // Called every 5 minutes by pg_cron. Sends a payload-less web push to every
 // user who has an active subscription and at least one reminder that just
 // became due (in the last 6 minutes so we don't miss any and don't repeat).
+//
+// This route is intentionally public (it must be reachable by pg_cron over
+// HTTP), so it is protected by a shared server-to-server secret instead of
+// Supabase Auth. pg_cron sends the secret in the `apikey` header; any request
+// without it is rejected before any work is done.
+
+const DISPATCH_SECRET = process.env.DISPATCH_REMINDERS_SECRET;
+
+function isAuthorized(request: Request): boolean {
+  if (!DISPATCH_SECRET || DISPATCH_SECRET.trim() === "") {
+    // No secret configured: refuse to run rather than silently allow.
+    return false;
+  }
+  const provided = request.headers.get("apikey") ?? "";
+  // Constant-time comparison to avoid timing-based secret guessing.
+  const expected = DISPATCH_SECRET;
+  if (provided.length !== expected.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < expected.length; i++) {
+    mismatch |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
 
 export const Route = createFileRoute("/api/public/dispatch-reminders")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        if (!isAuthorized(request)) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized" }),
+            { status: 401, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { getOrCreateVapidKeys, sendWebPush } = await import("@/lib/push.server");
 
