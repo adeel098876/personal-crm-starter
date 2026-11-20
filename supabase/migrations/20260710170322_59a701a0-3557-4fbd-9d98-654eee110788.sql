@@ -114,7 +114,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name = 'people' AND column_name = 'tags' AND data_type = 'jsonb'
   ) THEN
     CREATE OR REPLACE FUNCTION public._jsonb_tags_to_text(tags jsonb)
-    RETURNS text[] AS $$
+    RETURNS text[] AS $function$
     DECLARE
       result text[] := '{}'::text[];
     BEGIN
@@ -128,7 +128,7 @@ BEGIN
       END IF;
       RETURN COALESCE(result, '{}'::text[]);
     END;
-    $$ LANGUAGE plpgsql IMMUTABLE;
+    $function$ LANGUAGE plpgsql IMMUTABLE;
 
     ALTER TABLE public.people ALTER COLUMN tags DROP DEFAULT;
     ALTER TABLE public.people ALTER COLUMN tags TYPE TEXT[]
