@@ -225,10 +225,6 @@ If you'd like to improve the project:
 
 Please keep changes focused and avoid committing secrets or environment-specific configuration.
 
-## 📄 License
-
-Add the project's chosen open-source license here.
-
 ## ⭐ About
 
 Personal CRM Starter is an open-source foundation for developers who want to build relationship-focused applications without starting the architecture from scratch.
