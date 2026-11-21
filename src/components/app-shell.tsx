@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </defs>
               </svg>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground font-extrabold text-xl tracking-tight">
-                Bond Insight Keeper
+                Personal CRM Starter
               </span>
             </Link>
 

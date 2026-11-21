@@ -78,23 +78,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
-      { title: "Bond Insight Keeper — Relationship OS" },
+      { title: "Personal CRM Starter" },
       {
         name: "description",
         content:
-          "A private, keyboard-first relationship operating system. Never forget a birthday, a promise, or someone who matters.",
+          "A private, keyboard-first personal CRM. Never forget a birthday, a promise, or someone who matters.",
       },
-      { property: "og:title", content: "Bond Insight Keeper — Relationship OS" },
+      { property: "og:title", content: "Personal CRM Starter" },
       {
         property: "og:description",
-        content: "A private, keyboard-first relationship operating system.",
+        content: "A private, keyboard-first personal CRM.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#050508" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Bond Insight Keeper" },
+      { name: "apple-mobile-web-app-title", content: "Personal CRM Starter" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
     links: [

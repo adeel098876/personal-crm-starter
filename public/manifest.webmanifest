@@ -1,7 +1,7 @@
 {
-  "name": "Bond Insight Keeper — Relationship OS",
-  "short_name": "Bond Insight Keeper",
-  "description": "Your private relationship operating system.",
+  "name": "Personal CRM Starter",
+  "short_name": "Personal CRM Starter",
+  "description": "Your private personal CRM.",
   "start_url": "/today",
   "scope": "/",
   "display": "standalone",
