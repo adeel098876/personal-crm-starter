@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("kinetic-theme") as Theme) || "system";
+      return (localStorage.getItem("personal-crm-theme") as Theme) || "system";
     }
     return "system";
   });
@@ -55,7 +55,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
-    localStorage.setItem("kinetic-theme", newTheme);
+    localStorage.setItem("personal-crm-theme", newTheme);
     setThemeState(newTheme);
   };
 

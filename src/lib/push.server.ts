@@ -40,7 +40,7 @@ export async function generateVapidKeys(): Promise<VapidKeys> {
   return {
     publicKey: base64UrlEncode(point),
     privateKey: privJwk.d as string,
-    subject: "mailto:notifications@kinetic.app",
+    subject: "mailto:notifications@personal-crm-starter.app",
   };
 }
 
@@ -74,7 +74,7 @@ export async function signVapidJwt(
   const payload = {
     aud: audience,
     exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
-    sub: keys.subject || "mailto:notifications@kinetic.app",
+    sub: keys.subject || "mailto:notifications@personal-crm-starter.app",
   };
   const enc = (obj: unknown) => base64UrlEncode(new TextEncoder().encode(JSON.stringify(obj)));
   const unsigned = `${enc(header)}.${enc(payload)}`;
@@ -158,7 +158,7 @@ export async function getOrCreateVapidKeys(): Promise<VapidKeys> {
     return {
       publicKey: row.public_key,
       privateKey: row.private_key,
-      subject: row.subject || "mailto:notifications@kinetic.app",
+      subject: row.subject || "mailto:notifications@personal-crm-starter.app",
     };
   }
 

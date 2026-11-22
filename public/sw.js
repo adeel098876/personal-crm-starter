@@ -1,4 +1,4 @@
-// Kinetic push service worker.
+// Personal CRM Starter push service worker.
 // Payload-less by design: on push, we show a generic prompt and open the app.
 // The user reads the actual reminders in-app; this avoids RFC 8291 payload
 // encryption complexity while still delivering real notifications.
@@ -12,7 +12,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let title = "Kinetic";
+  let title = "Personal CRM Starter";
   let body = "You have reminders due.";
   let url = "/today";
   try {
@@ -29,7 +29,7 @@ self.addEventListener("push", (event) => {
       body,
       icon: "/favicon.ico",
       badge: "/favicon.ico",
-      tag: "kinetic-reminder",
+      tag: "personal-crm-reminder",
       data: { url },
     }),
   );

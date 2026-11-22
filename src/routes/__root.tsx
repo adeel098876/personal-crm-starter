@@ -128,7 +128,7 @@ function RootShell({ children }: { children: ReactNode }) {
             __html: `
               (function() {
                 try {
-                  var t = localStorage.getItem('kinetic-theme') || 'system';
+                  var t = localStorage.getItem('personal-crm-theme') || 'system';
                   var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');
