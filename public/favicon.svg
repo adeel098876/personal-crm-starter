@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGrad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stopColor="#0A84FF"/>
+      <stop offset="1" stopColor="#BF5AF2"/>
+    </linearGradient>
+    <linearGradient id="logoGrad2" x1="7" y1="7" x2="17" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stopColor="#BF5AF2"/>
+      <stop offset="1" stopColor="#30D158"/>
+    </linearGradient>
+  </defs>
+  <circle cx="12" cy="12" r="9" stroke="url(#logoGrad)" strokeWidth="2.5"/>
+  <circle cx="12" cy="12" r="5" stroke="url(#logoGrad2)" strokeWidth="1.5" strokeDasharray="3 2"/>
+</svg>
