@@ -1,87 +1,24 @@
 # Architecture
 
-Frontend
+## Stack
+- **Frontend:** React, TypeScript, TanStack Start / Router, Tailwind CSS, shadcn/ui, PWA
+- **Backend:** Supabase (Auth + PostgreSQL), accessed through TanStack server functions
+- **AI (optional):** Groq, called server-side from `src/lib/ai.functions.ts`
 
-- React
-- TypeScript
-- TanStack Start
-- Tailwind CSS
-- shadcn/ui
-- PWA
+## Data flow
+Browser → TanStack server function → Supabase (Row Level Security) → PostgreSQL
 
-Backend
+## AI flow
+Browser → `src/lib/ai.functions.ts` (server) → Groq API (`llama-3.3-70b-versatile`)
+`GROQ_API_KEY` is only read on the server and never reaches the browser.
 
-- Supabase
+## Database tables
+profiles, people, person_fields, notes, interactions, reminders, promises,
+health_snapshots, import_batches, push_subscriptions, vapid_keys
 
-Database
+Every table has Row Level Security so users can only access their own rows.
+`vapid_keys` is server-only (service role).
 
-- PostgreSQL
-
-Authentication
-
-- Supabase Auth
-
-Storage
-
-- Supabase Storage
-
-AI
-
-Frontend
-
-↓
-
-TanStack Server Function (`src/lib/ai.functions.ts`)
-
-↓
-
-Groq API (`https://api.groq.com/openai/v1/chat/completions`)
-
-Model: `llama-3.3-70b-versatile`
-
-Key: server-side `GROQ_API_KEY` only (never client-exposed)
-
-Future:
-
-- Claude
-- Gemini
-
-Database
-
-users
-
-contacts
-
-interaction_history
-
-notes
-
-promises
-
-reminders
-
-subscriptions
-
-settings
-
-ai_usage
-
-attachments
-
-notifications
-
-Flow
-
-React
-
-↓
-
-Supabase JS
-
-↓
-
-RLS
-
-↓
-
-PostgreSQL
+## Security boundaries
+- Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` only
+- Server: `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `DISPATCH_REMINDERS_SECRET`
