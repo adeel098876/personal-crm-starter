@@ -74,65 +74,85 @@ The AI layer is intended to remain configurable so developers can adapt it to di
 
 ### Prerequisites
 
-- Node.js
-- npm
-- A Supabase project
-- An AI provider/API key if AI features are enabled
+- Node.js 20+ and npm
+- A free [Supabase](https://supabase.com) project
+- *(Optional)* A [Groq](https://console.groq.com) API key for the AI features
 
-### 1. Clone
-
-```bash
-git clone https://github.com/adeel098876/bond-insight-keeper.git
-cd bond-insight-keeper
-```
-
-### 2. Install dependencies
+### 1. Clone and install
 
 ```bash
+git clone https://github.com/adeel098876/personal-crm-starter.git
+cd personal-crm-starter
 npm install
 ```
 
+### 2. Set up the database
+
+1. Create a new project at [supabase.com](https://supabase.com).
+2. Create the tables and security rules. Choose one:
+   - **SQL Editor (easiest):** open `supabase/migrations/20260710000000_initial_schema.sql`, paste it into the Supabase SQL Editor, and click **Run**.
+   - **Supabase CLI:**
+     ```bash
+     npx supabase login
+     npx supabase link --project-ref <your-project-ref>
+     npx supabase db push
+     ```
+3. In **Project Settings → API**, copy the project URL, the publishable (anon) key, and the secret (service-role) key.
+
+The schema turns on Row Level Security for every table, so each user can only read and write their own data. Run it **once, on a fresh project**.
+
 ### 3. Configure environment variables
 
-Copy the example environment file:
-
 ```bash
-cp .env.example .env
+cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 ```
 
-On Windows PowerShell:
+| Variable | Used by | Required |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Browser | Yes |
+| `VITE_SUPABASE_ANON_KEY` | Browser | Yes |
+| `SUPABASE_URL` | Server only | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Yes |
+| `GROQ_API_KEY` | Server only (AI features) | Optional |
+| `DISPATCH_REMINDERS_SECRET` | Server only (push reminders) | Optional |
 
-```powershell
-Copy-Item .env.example .env
-```
+> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` bypasses all security rules and `GROQ_API_KEY` costs money. Never prefix them with `VITE_`, never expose them to the browser, and never commit your `.env`.
 
-Fill in the required values.
-
-**Never commit `.env` or production credentials.**
-
-### 4. Run the development server
+### 4. Run it
 
 ```bash
 npm run dev
 ```
 
-Then open the local development URL shown by Vite.
+Open the local URL shown in the terminal, create an account, and add your first person.
 
-### 5. Build
+### 5. Build for production
 
 ```bash
 npm run build
 ```
 
-## 🗄️ Supabase Setup
+## 🤖 AI Features (optional)
 
-Personal CRM Starter uses Supabase for authentication and database functionality.
+AI meeting briefs, summaries, and smart search run **on the server** through `src/lib/ai.functions.ts`, using Groq (`llama-3.3-70b-versatile`). Set `GROQ_API_KEY` to enable them. Without it, the rest of the app works normally.
 
-Create a Supabase project and configure the required environment variables.
+**Privacy note:** when you use an AI feature, the relevant people, notes, and interaction text are sent to the AI provider. Leave it disabled if you are not comfortable with that. To use a different provider, change the request in `src/lib/ai.functions.ts`.
 
-The project uses Supabase security controls to isolate user data.
+## 🔔 Push Reminders (optional)
 
-For production deployments, ensure your Supabase authentication, database policies, and environment variables are configured correctly before exposing the application publicly.
+The app works without this. Push notifications for due reminders come from a scheduled job that calls `/api/public/dispatch-reminders` every 5 minutes. The endpoint rejects any request that doesn't carry your secret.
+
+1. Deploy the app (see below).
+2. Generate a long random secret (`openssl rand -hex 32`) and set it as `DISPATCH_REMINDERS_SECRET` in your server environment (for example, in Vercel).
+3. Open `supabase/optional/push-reminders-cron.sql`, replace `YOUR-DOMAIN.example.com` and `REPLACE_WITH_YOUR_SECRET` with your domain and the same secret, then run it in the Supabase SQL Editor.
+
+To turn it off later, run `SELECT cron.unschedule('dispatch-reminder-push');`.
+
+## 🚢 Deploying to Vercel
+
+1. Import the repository in Vercel (the framework is detected from `vercel.json`).
+2. Add the environment variables from the table above under **Project Settings → Environment Variables**.
+3. Deploy, then add your production URL in **Supabase → Authentication → URL Configuration**.
 
 ## 🔐 Security
 
