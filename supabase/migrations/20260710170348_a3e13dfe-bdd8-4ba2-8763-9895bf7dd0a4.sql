@@ -1,0 +1,3 @@
+-- Squashed into 20260710000000_initial_schema.sql
+-- This file exists only to satisfy Supabase migration history for the existing remote project.
+-- Do not modify. Fresh installations should use 20260710000000_initial_schema.sql instead.
