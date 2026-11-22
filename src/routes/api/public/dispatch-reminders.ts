@@ -32,10 +32,10 @@ export const Route = createFileRoute("/api/public/dispatch-reminders")({
     handlers: {
       POST: async ({ request }) => {
         if (!isAuthorized(request)) {
-          return new Response(
-            JSON.stringify({ error: "Unauthorized" }),
-            { status: 401, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

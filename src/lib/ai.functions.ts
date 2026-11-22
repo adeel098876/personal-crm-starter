@@ -336,7 +336,11 @@ export const getConversationStarters = createServerFn({ method: "POST" })
         .select("body, content, created_at")
         .eq("person_id", data.person_id)
         .limit(5),
-      supabase.from("person_fields").select("category, key, value").eq("person_id", data.person_id).limit(50),
+      supabase
+        .from("person_fields")
+        .select("category, key, value")
+        .eq("person_id", data.person_id)
+        .limit(50),
     ]);
 
     const raw = await callAI(
