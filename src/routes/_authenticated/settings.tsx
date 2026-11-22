@@ -170,7 +170,7 @@ function SettingsPage() {
             Appearance & Theme
           </p>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-            Customize Kinetic's appearance for day or night. Auto syncs with system settings.
+            Customize the app's appearance for day or night. Auto syncs with system settings.
           </p>
         </div>
 
@@ -260,7 +260,7 @@ function SettingsPage() {
             Push notifications
           </p>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-            Get notified when reminders are due — even when Kinetic isn't open.
+            Get notified when reminders are due — even when the app isn't open.
           </p>
         </div>
 
@@ -271,10 +271,10 @@ function SettingsPage() {
         {pushSupported && ios && !installedOnHome && (
           <div className="text-xs glass-panel border border-border rounded-2xl p-4 space-y-1">
             <p className="font-semibold text-foreground">
-              iOS requires installing Kinetic to your Home Screen first.
+              iOS requires installing the app to your Home Screen first.
             </p>
             <p className="text-muted-foreground">
-              In Safari: Share → Add to Home Screen. Then open Kinetic from the icon and come back
+              In Safari: Share → Add to Home Screen. Then open the app from the icon and come back
               here.
             </p>
           </div>
