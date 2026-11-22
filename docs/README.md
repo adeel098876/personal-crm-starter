@@ -1,5 +1,5 @@
 # Personal CRM Starter
-
+![CI](https://github.com/adeel098876/personal-crm-starter/actions/workflows/ci.yml/badge.svg)
 An open-source personal CRM starter for building applications that help people organize, remember, and maintain meaningful relationships.
 
 Built with **React, TypeScript, TanStack Start, and Supabase**.
