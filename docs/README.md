@@ -86,20 +86,20 @@ cd personal-crm-starter
 npm install
 ```
 
-### 2. Set up Supabase
+### 2. Set up the database
 
 1. Create a new project at [supabase.com](https://supabase.com).
-2. Apply the database schema. Choose one:
-   - **SQL Editor:** open each file in `supabase/migrations/` in filename order and run it.
+2. Create the tables and security rules. Choose one:
+   - **SQL Editor (easiest):** open `supabase/migrations/20260710000000_initial_schema.sql`, paste it into the Supabase SQL Editor, and click **Run**.
    - **Supabase CLI:**
      ```bash
      npx supabase login
      npx supabase link --project-ref <your-project-ref>
      npx supabase db push
      ```
-3. In **Project Settings → API**, copy your project URL, the publishable (anon) key, and the secret (service-role) key.
+3. In **Project Settings → API**, copy the project URL, the publishable (anon) key, and the secret (service-role) key.
 
-The schema enables Row Level Security on every table, so each user can only read and write their own data.
+The schema turns on Row Level Security for every table, so each user can only read and write their own data. Run it **once, on a fresh project**.
 
 ### 3. Configure environment variables
 
@@ -107,7 +107,7 @@ The schema enables Row Level Security on every table, so each user can only read
 cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 ```
 
-| Variable | Where it's used | Required |
+| Variable | Used by | Required |
 |---|---|---|
 | `VITE_SUPABASE_URL` | Browser | Yes |
 | `VITE_SUPABASE_ANON_KEY` | Browser | Yes |
@@ -116,7 +116,7 @@ cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 | `GROQ_API_KEY` | Server only (AI features) | Optional |
 | `DISPATCH_REMINDERS_SECRET` | Server only (push reminders) | Optional |
 
-> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` and `GROQ_API_KEY` bypass security or cost money. Never prefix them with `VITE_`, never expose them to the browser, and never commit your `.env`.
+> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` bypasses all security rules and `GROQ_API_KEY` costs money. Never prefix them with `VITE_`, never expose them to the browser, and never commit your `.env`.
 
 ### 4. Run it
 
@@ -124,7 +124,7 @@ cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 npm run dev
 ```
 
-Open the local URL shown in the terminal, create an account on the sign-in page, and add your first person.
+Open the local URL shown in the terminal, create an account, and add your first person.
 
 ### 5. Build for production
 
@@ -136,27 +136,23 @@ npm run build
 
 AI meeting briefs, summaries, and smart search run **on the server** through `src/lib/ai.functions.ts`, using Groq (`llama-3.3-70b-versatile`). Set `GROQ_API_KEY` to enable them. Without it, the rest of the app works normally.
 
-**Privacy note:** when you use an AI feature, the relevant people, notes, and interaction text are sent to the AI provider. Don't enable it if you're not comfortable with that. To use a different provider, change the request in `src/lib/ai.functions.ts`.
+**Privacy note:** when you use an AI feature, the relevant people, notes, and interaction text are sent to the AI provider. Leave it disabled if you are not comfortable with that. To use a different provider, change the request in `src/lib/ai.functions.ts`.
 
 ## 🔔 Push Reminders (optional)
 
-Push notifications for due reminders are sent by a scheduled job that calls `/api/public/dispatch-reminders` every 5 minutes. The endpoint rejects any request without the shared secret.
+The app works without this. Push notifications for due reminders come from a scheduled job that calls `/api/public/dispatch-reminders` every 5 minutes. The endpoint rejects any request that doesn't carry your secret.
 
-1. Generate a long random secret and set it as `DISPATCH_REMINDERS_SECRET` in your server environment (for example, in Vercel).
-2. In the Supabase SQL Editor, point the cron job at your deployed app:
-   ```sql
-   ALTER DATABASE postgres SET app.dispatch_url = 'https://<your-domain>/api/public/dispatch-reminders';
-   ALTER DATABASE postgres SET app.dispatch_reminders_secret = '<the same secret>';
-   ```
-3. Make sure the `pg_cron` extension is enabled for your project.
+1. Deploy the app (see below).
+2. Generate a long random secret (`openssl rand -hex 32`) and set it as `DISPATCH_REMINDERS_SECRET` in your server environment (for example, in Vercel).
+3. Open `supabase/optional/push-reminders-cron.sql`, replace `YOUR-DOMAIN.example.com` and `REPLACE_WITH_YOUR_SECRET` with your domain and the same secret, then run it in the Supabase SQL Editor.
 
-If you skip this, reminders still show up in the app, you just won't get push notifications.
+To turn it off later, run `SELECT cron.unschedule('dispatch-reminder-push');`.
 
 ## 🚢 Deploying to Vercel
 
 1. Import the repository in Vercel (the framework is detected from `vercel.json`).
-2. Add all environment variables from the table above in **Project Settings → Environment Variables**.
-3. Deploy, then add your production URL to **Supabase → Authentication → URL Configuration**.
+2. Add the environment variables from the table above under **Project Settings → Environment Variables**.
+3. Deploy, then add your production URL in **Supabase → Authentication → URL Configuration**.
 
 ## 🔐 Security
 
